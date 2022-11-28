@@ -43,6 +43,7 @@ func NewHttpServer(address string, storage Storage) *HttpServer {
 		return withRecovery(withRequestID(next))
 	}
 
+	server.mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	server.mux.Handle("/feed/", middleware(http.HandlerFunc(server.handleFeed)))
 	server.mux.Handle("/plaintext/", middleware(http.HandlerFunc(server.handlePlaintext)))
 	server.mux.Handle("/websocket", middleware(http.HandlerFunc(server.handleWebsocket)))

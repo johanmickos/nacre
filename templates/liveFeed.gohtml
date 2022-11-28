@@ -3,8 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="../static/vendor/xterm.css" />
+    <link rel="stylesheet" href="../static/nacre.css" />
+    <script src="../static/vendor/xterm.js"></script>
+    <script src="../static/vendor/xterm-addon-fit.js"></script>
     <title>nacre - {{ .FeedID }}</title>
   </head>
   <body>
+    <div id="terminal"></div>
   </body>
+  <script type="text/javascript">const feedId = "{{ .FeedID }}";</script>
+  <script src="../static/nacre.js"></script>
 </html>
