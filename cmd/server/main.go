@@ -12,17 +12,20 @@ func main() {
 	defer cancel()
 	group, rootCtx := errgroup.WithContext(rootCtx)
 
-	address := "127.0.0.1:1337"
 	storage := nacre.NewLoggingStorage()
-	tcpServer, err := nacre.NewTcpServer(address, storage)
+	tcpServer, err := nacre.NewTcpServer("127.0.0.1:1337", storage)
 	if err != nil {
 		panic(err)
 	}
+	httpServer := nacre.NewHttpServer("127.0.0.1:8080", storage)
 
 	// TODO Propagate signal, gracefully shut down server
 	group.Go(func() error {
 		tcpServer.Serve(rootCtx)
 		return nil
+	})
+	group.Go(func() error {
+		return httpServer.Serve()
 	})
 	if err := group.Wait(); err != nil {
 		panic(err)
