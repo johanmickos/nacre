@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 var (
@@ -13,9 +16,10 @@ var (
 )
 
 type HttpServer struct {
-	quit    chan struct{}
-	storage Storage
-	mux     *http.ServeMux
+	quit       chan struct{}
+	storage    Storage
+	mux        *http.ServeMux
+	wsUpgrader websocket.Upgrader
 
 	address string
 	bufsize int
@@ -26,6 +30,10 @@ func NewHttpServer(address string, storage Storage) *HttpServer {
 		quit:    make(chan struct{}),
 		storage: storage,
 		mux:     http.NewServeMux(),
+		wsUpgrader: websocket.Upgrader{
+			WriteBufferSize: 1024,
+			ReadBufferSize:  1024,
+		},
 
 		address: address,
 		bufsize: 1024,
@@ -37,6 +45,7 @@ func NewHttpServer(address string, storage Storage) *HttpServer {
 
 	server.mux.Handle("/feed/", middleware(http.HandlerFunc(server.handleFeed)))
 	server.mux.Handle("/plaintext/", middleware(http.HandlerFunc(server.handlePlaintext)))
+	server.mux.Handle("/websocket", middleware(http.HandlerFunc(server.handleWebsocket)))
 	server.mux.Handle("/", middleware(http.HandlerFunc(handleInfo)))
 	return server
 }
@@ -89,12 +98,48 @@ func (s HttpServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 		Entries []string
 	}{
 		FeedID:  parts[1],
-		Entries: []string{"TODO"},
+		Entries: []string{"dummy data from nacre"}, // TODO
 	}
 	if err := plaintextFeedTemplate.Execute(rw, data); err != nil {
 		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
 		log.Printf("Could not execute template: %v\n", err)
 		return
+	}
+}
+
+func (s HttpServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
+	conn, err := s.wsUpgrader.Upgrade(rw, r, nil)
+	if err != nil {
+		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		return
+	}
+	defer conn.Close()
+	msgType, msg, err := conn.ReadMessage()
+	if err != nil {
+		log.Fatal(err) // FIXME
+		return
+	}
+	if msgType != websocket.TextMessage {
+		log.Printf("error: invalid msgType %v\n", msgType)
+		return
+	}
+
+	log.Printf("Handling message %s with type %v", msg, msgType)
+	data := make(chan []byte) // TODO Get actual data based on feed ID in 'msg'
+	go func() {
+		for i := 0; i < 10; i++ {
+			time.Sleep(time.Second * 1)
+			data <- []byte("dummy data from nacre\n")
+		}
+		close(data)
+	}()
+
+	// TODO Request cancellation, signalling of closure to clients, etc.
+	for update := range data {
+		if err := conn.WriteMessage(websocket.BinaryMessage, update); err != nil {
+			log.Fatal(err) // FIXME
+			return
+		}
 	}
 }
 
