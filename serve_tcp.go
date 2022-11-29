@@ -16,19 +16,21 @@ type TCPServer struct {
 	wg       sync.WaitGroup
 	storage  Storage
 
-	address string
-	bufsize int
+	address     string
+	httpAddress string
+	bufsize     int
 }
 
 // NewTCPServer returns a stoppable TCP server listening on
 // the provided adderss.
-func NewTCPServer(address string, storage Storage) (*TCPServer, error) {
+func NewTCPServer(address string, httpAddress string, storage Storage) (*TCPServer, error) {
 	server := &TCPServer{
-		quit:    make(chan struct{}),
-		storage: storage,
-		wg:      sync.WaitGroup{},
-		address: address,
-		bufsize: 1024,
+		quit:        make(chan struct{}),
+		storage:     storage,
+		wg:          sync.WaitGroup{},
+		address:     address,
+		httpAddress: httpAddress,
+		bufsize:     1024,
 	}
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
@@ -60,9 +62,10 @@ func (s *TCPServer) Serve(ctx context.Context) {
 // handle the connection by reading incoming bytes and pushing them to
 // the Storage implementation.
 func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
+	// TODO Indicate connection closure to peers via Hub
 	defer conn.Close()
 	sid := NewUUID()
-	msg := fmt.Sprintf("Connected to nacre\n%s/feed/%s\n", s.address, sid)
+	msg := fmt.Sprintf("Connected to nacre\n%s/feed/%s\n", s.httpAddress, sid)
 	n, err := conn.Write([]byte(msg))
 	if err != nil {
 		log.Printf("error: conn.Write: %s\n", err.Error())

@@ -3,8 +3,14 @@ package main
 import (
 	"context"
 
+	"github.com/go-redis/redis/v9"
 	"github.com/jarlopez/nacre"
 	"golang.org/x/sync/errgroup"
+)
+
+const (
+	tcpAddress  = "127.0.0.1:1337"
+	httpAddress = "127.0.0.1:8080"
 )
 
 func main() {
@@ -12,13 +18,19 @@ func main() {
 	defer cancel()
 	group, rootCtx := errgroup.WithContext(rootCtx)
 
-	storage := nacre.NewLoggingStorage()
+	// TODO Configure from elsewhere
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "127.0.0.1:6379",
+		Password: "",
+		DB:       0,
+	})
+	storage := nacre.NewRedisStorage(redisClient)
 	hub := nacre.NewHub(storage)
-	tcpServer, err := nacre.NewTCPServer("127.0.0.1:1337", storage)
+	tcpServer, err := nacre.NewTCPServer(tcpAddress, httpAddress, storage)
 	if err != nil {
 		panic(err)
 	}
-	httpServer := nacre.NewHTTPServer("127.0.0.1:8080", hub, storage)
+	httpServer := nacre.NewHTTPServer(httpAddress, hub, storage)
 
 	// TODO Propagate signal, gracefully shut down server
 	group.Go(func() error {
