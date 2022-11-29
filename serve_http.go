@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gorilla/websocket"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -19,6 +19,7 @@ var (
 type HTTPServer struct {
 	quit       chan struct{}
 	storage    Storage
+	hub        *Hub
 	mux        *http.ServeMux
 	wsUpgrader websocket.Upgrader
 
@@ -27,10 +28,11 @@ type HTTPServer struct {
 }
 
 // NewHTTPServer allocates a HTTP server for serving nacre's HTTP traffic.
-func NewHTTPServer(address string, storage Storage) *HTTPServer {
+func NewHTTPServer(address string, hub *Hub, storage Storage) *HTTPServer {
 	server := &HTTPServer{
 		quit:    make(chan struct{}),
 		storage: storage,
+		hub:     hub,
 		mux:     http.NewServeMux(),
 		wsUpgrader: websocket.Upgrader{
 			WriteBufferSize: 1024,
@@ -138,65 +140,15 @@ func (s HTTPServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Handling message %s with type %v", msg, msgType)
 
-	data, err := s.storage.Listen(r.Context(), string(msg))
-	if err != nil {
-		log.Printf("error: storage.Listen %v", err)
-		return
+	peer := &Peer{
+		conn: conn,
+		hub:  s.hub,
 	}
-
-	// Read loop
-	go func() {
-		defer func() {
-			// TODO Unregister from peer management
-			conn.Close()
-			log.Printf("Connection closed")
-		}()
-		conn.SetReadLimit(256)
-		conn.SetReadDeadline(time.Now().Add(time.Second * 60))
-		conn.SetPongHandler(func(string) error {
-			conn.SetReadDeadline(time.Now().Add(time.Second * 60))
-			return nil
-		})
-		for {
-			select {
-			case <-r.Context().Done():
-				return
-			default:
-				// OK
-			}
-			_, _, err := conn.ReadMessage()
-			if err != nil {
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.Printf("error: %v", err)
-				}
-				return
-			}
-		}
-	}()
-
-	// Write loop
-	ticker := time.NewTicker(time.Second * 50)
-	for {
-		select {
-		case <-r.Context().Done():
-			_ = conn.WriteMessage(websocket.CloseMessage, []byte{})
-			return
-		case message, ok := <-data:
-			conn.SetWriteDeadline(time.Now().Add(time.Second * 10))
-			if !ok {
-				// Data channel was closed
-				_ = conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-			if err := conn.WriteMessage(websocket.BinaryMessage, message); err != nil {
-				return
-			}
-		case <-ticker.C:
-			conn.SetWriteDeadline(time.Now().Add(time.Second * 10))
-			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
-		}
+	g := new(errgroup.Group)
+	g.Go(func() error { return peer.readLoop(r.Context()) })
+	g.Go(func() error { return peer.writeLoop(r.Context(), string(msg)) })
+	if err := g.Wait(); err != nil {
+		log.Printf("Internal error: %v", err)
 	}
 }
 
