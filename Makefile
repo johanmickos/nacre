@@ -22,6 +22,11 @@ build:
 	mkdir -p out/bin
 	$(GO) build -o out/bin/$(BINARY_NAME) ./cmd/server
 
+.PHONY: clean
+clean:
+	@rm -rf out/bin
+	@$(GO) clean --cache
+
 .PHONY: run
 run:
 	$(GO) run cmd/server/main.go
