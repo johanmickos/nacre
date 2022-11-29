@@ -32,20 +32,18 @@ func (s loggingStorage) Listen(ctx context.Context, id string) (<-chan []byte, e
 	ch := make(chan []byte)
 	go func() {
 		defer close(ch)
-		defer func() { log.Printf("Ending listen loop for dummy data\n") }()
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			default: // OK
 			}
-			time.Sleep(time.Second * 1)
 			select {
 			case <-ctx.Done():
 				return
-			case ch <- []byte("dummy data from nacre\n"): // OK
+			case ch <- []byte("dummy data from nacre\n"):
+				time.Sleep(time.Second * 1)
 			case <-time.After(time.Second * 10):
-				log.Printf("Timeout while writing data in loggingStorage")
 				return
 			default: // OK
 			}

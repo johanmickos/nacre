@@ -33,3 +33,28 @@ body {
   width: auto;
   height: 100%;
 }
+
+#status {
+  font-family: "Menlo", "DejaVu Sans Mono", "Lucida Console", monospace;
+  color: orange;
+  margin: 3px;
+}
+
+#status::before {
+  content: "⬤ WAITING";
+}
+
+#status.connected {
+  color: green;
+}
+
+#status.connected::before {
+  content: "⬤ LIVE";
+}
+
+#status.disconnected{
+  color: rgb(163, 0, 0);
+}
+#status.disconnected::before {
+  content: "⬤ CLOSED";
+}

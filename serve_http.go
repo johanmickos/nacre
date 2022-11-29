@@ -78,7 +78,7 @@ func (s HttpServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 	}
 	if err := liveFeedTemplate.Execute(rw, data); err != nil {
 		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
-		log.Printf("Could not execute template: %v\n", err)
+		log.Printf("Could not execute template: %v", err)
 		return
 	}
 }
@@ -123,32 +123,76 @@ func (s HttpServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
 		return
 	}
-	defer conn.Close()
 	msgType, msg, err := conn.ReadMessage()
 	if err != nil {
 		log.Fatal(err) // FIXME
 		return
 	}
 	if msgType != websocket.TextMessage {
-		log.Printf("error: invalid msgType %v\n", msgType)
+		log.Printf("error: invalid msgType %v", msgType)
 		return
 	}
 
 	log.Printf("Handling message %s with type %v", msg, msgType)
-	data := make(chan []byte) // TODO Get actual data based on feed ID in 'msg'
+
+	data, err := s.storage.Listen(r.Context(), string(msg))
+	if err != nil {
+		log.Printf("error: storage.Listen %v", err)
+		return
+	}
+
+	// Read loop
 	go func() {
-		for i := 0; i < 10; i++ {
-			time.Sleep(time.Second * 1)
-			data <- []byte("dummy data from nacre\n")
+		defer func() {
+			// TODO Unregister from peer management
+			conn.Close()
+			log.Printf("Connection closed")
+		}()
+		conn.SetReadLimit(256)
+		conn.SetReadDeadline(time.Now().Add(time.Second * 60))
+		conn.SetPongHandler(func(string) error {
+			conn.SetReadDeadline(time.Now().Add(time.Second * 60))
+			return nil
+		})
+		for {
+			select {
+			case <-r.Context().Done():
+				return
+			default:
+				// OK
+			}
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Printf("error: %v", err)
+				}
+				return
+			}
 		}
-		close(data)
 	}()
 
-	// TODO Request cancellation, signalling of closure to clients, etc.
-	for update := range data {
-		if err := conn.WriteMessage(websocket.BinaryMessage, update); err != nil {
-			log.Fatal(err) // FIXME
+	// Write loop
+	ticker := time.NewTicker(time.Second * 50)
+	for {
+		select {
+		case <-r.Context().Done():
+			_ = conn.WriteMessage(websocket.CloseMessage, []byte{})
 			return
+		case message, ok := <-data:
+			conn.SetWriteDeadline(time.Now().Add(time.Second * 10))
+			if !ok {
+				// Data channel was closed
+				_ = conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+			if err := conn.WriteMessage(websocket.BinaryMessage, message); err != nil {
+				return
+			}
+		case <-ticker.C:
+			conn.SetWriteDeadline(time.Now().Add(time.Second * 10))
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
 		}
 	}
 }
