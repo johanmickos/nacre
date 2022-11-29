@@ -15,7 +15,8 @@ var (
 	plaintextFeedTemplate = template.Must(template.ParseFiles("./templates/plaintextFeed.gohtml"))
 )
 
-type HttpServer struct {
+// HTTPServer handles nacre's HTTP requests and websocket upgrades.
+type HTTPServer struct {
 	quit       chan struct{}
 	storage    Storage
 	mux        *http.ServeMux
@@ -25,8 +26,9 @@ type HttpServer struct {
 	bufsize int
 }
 
-func NewHttpServer(address string, storage Storage) *HttpServer {
-	server := &HttpServer{
+// NewHTTPServer allocates a HTTP server for serving nacre's HTTP traffic.
+func NewHTTPServer(address string, storage Storage) *HTTPServer {
+	server := &HTTPServer{
 		quit:    make(chan struct{}),
 		storage: storage,
 		mux:     http.NewServeMux(),
@@ -51,7 +53,8 @@ func NewHttpServer(address string, storage Storage) *HttpServer {
 	return server
 }
 
-func (s *HttpServer) Serve() error {
+// Serve HTTP traffic on the configured address.
+func (s *HTTPServer) Serve() error {
 	return http.ListenAndServe(s.address, s.mux)
 }
 
@@ -60,7 +63,7 @@ func handleInfo(rw http.ResponseWriter, r *http.Request) {
 	rw.Write([]byte("OK"))
 }
 
-func (s HttpServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
+func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")[1:]
 	if len(parts) != 2 {
 		// ["feed", "${feedID}"]
@@ -83,7 +86,7 @@ func (s HttpServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s HttpServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
+func (s HTTPServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")[1:]
 	if len(parts) != 2 {
 		// ["plaintext", "${feedID}"]
@@ -117,7 +120,7 @@ func (s HttpServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s HttpServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
+func (s HTTPServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 	conn, err := s.wsUpgrader.Upgrade(rw, r, nil)
 	if err != nil {
 		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)

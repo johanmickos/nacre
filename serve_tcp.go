@@ -9,7 +9,8 @@ import (
 	"sync"
 )
 
-type TcpServer struct {
+// TCPServer handles nacre's TCP clients and their data streams.
+type TCPServer struct {
 	listener net.Listener
 	quit     chan struct{}
 	wg       sync.WaitGroup
@@ -21,8 +22,8 @@ type TcpServer struct {
 
 // NewTCPServer returns a stoppable TCP server listening on
 // the provided adderss.
-func NewTcpServer(address string, storage Storage) (*TcpServer, error) {
-	server := &TcpServer{
+func NewTCPServer(address string, storage Storage) (*TCPServer, error) {
+	server := &TCPServer{
 		quit:    make(chan struct{}),
 		storage: storage,
 		wg:      sync.WaitGroup{},
@@ -38,7 +39,7 @@ func NewTcpServer(address string, storage Storage) (*TcpServer, error) {
 }
 
 // Serve incoming TCP connections and handle them in new goroutines.
-func (s *TcpServer) Serve(ctx context.Context) {
+func (s *TCPServer) Serve(ctx context.Context) {
 	s.wg.Add(1)
 	defer s.wg.Done()
 
@@ -58,7 +59,7 @@ func (s *TcpServer) Serve(ctx context.Context) {
 
 // handle the connection by reading incoming bytes and pushing them to
 // the Storage implementation.
-func (s *TcpServer) handle(ctx context.Context, conn net.Conn) {
+func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 	sid := NewUUID()
 	msg := fmt.Sprintf("Connected to nacre\n%s/feed/%s\n", s.address, sid)
