@@ -6,8 +6,6 @@
     <title>nacre - {{ .FeedID }}</title>
   </head>
   <body>
-    {{ range .Entries }}
-    <pre>{{ . }}</pre>
-    {{ end }}
+    <pre>{{ range .Entries }}{{ . }}{{ end }}</pre>
   </body>
 </html>

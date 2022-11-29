@@ -94,16 +94,25 @@ func (s HttpServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "Bad request", http.StatusBadRequest)
 		return
 	}
+	id := parts[1]
+	entries, err := s.storage.GetAll(r.Context(), id)
+	if err != nil {
+		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		return
+	}
 	data := struct {
 		FeedID  string
 		Entries []string
 	}{
-		FeedID:  parts[1],
-		Entries: []string{"dummy data from nacre"}, // TODO
+		FeedID:  id,
+		Entries: make([]string, len(entries)),
+	}
+	for i, entry := range entries {
+		data.Entries[i] = string(entry)
 	}
 	if err := plaintextFeedTemplate.Execute(rw, data); err != nil {
 		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
-		log.Printf("Could not execute template: %v\n", err)
+		log.Printf("Could not execute template: %v", err)
 		return
 	}
 }
