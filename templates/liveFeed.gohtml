@@ -10,7 +10,13 @@
     <title>nacre - {{ .FeedID }}</title>
   </head>
   <body>
-    <div id="status"><span id="indicator">⬤ </span><span id="state"></span></div>
+    <nav class="">
+      <ol>
+          <li class="crumb"><a href="{{ .HomeURL }}">HOME</a></li>
+          <li class="crumb"><a href="{{ .PlaintextURL }}">PLAINTEXT</a></li>
+          <li class="crumb"><div id="status"><span class="indicator">⬤</span><span class="state"></span></div></li>
+      </ol>
+    </nav>
     <div id="terminal"></div>
   </body>
   <script type="text/javascript">const feedId = "{{ .FeedID }}";</script>

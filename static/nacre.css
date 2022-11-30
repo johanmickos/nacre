@@ -34,7 +34,6 @@ body {
   height: 100%;
 }
 
-
 #status {
   font-family: "Menlo", "DejaVu Sans Mono", "Lucida Console", monospace;
   color: orange;
@@ -42,8 +41,12 @@ body {
   margin-bottom: 1rem;
 }
 
-#status #state::before {
+#status .state::before {
   content: "WAITING";
+}
+
+#status .indicator {
+  margin: 0.2rem;
 }
 
 @keyframes pulseStatusConnected {
@@ -58,11 +61,11 @@ body {
   text-shadow: 0 0 8px green;
 }
 
-#status.connected #indicator {
+#status.connected .indicator {
   animation: pulseStatusConnected 3.5s infinite;
 }
 
-#status.connected #state::before {
+#status.connected .state::before {
   content: "LIVE";
 }
 
@@ -70,6 +73,15 @@ body {
   color: rgb(163, 0, 0);
   text-shadow: 0 0 8px rgb(163, 0, 0);
 }
-#status.disconnected #state::before {
+#status.disconnected .state::before {
   content: "CLOSED";
+}
+
+.crumbs ol {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.crumb {
+    display: inline-block;
 }

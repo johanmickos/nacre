@@ -8,7 +8,7 @@
     const fitAddon = new FitAddon.FitAddon();
     terminal.loadAddon(fitAddon);
     terminal.open(document.getElementById('terminal'), {focus: true});
-    var status = document.getElementById('status');
+    const status = document.getElementById('status');
     fitAddon.fit();
     window.addEventListener('resize', function() {
         fitAddon.fit();
@@ -18,8 +18,6 @@
     socket.binaryType = 'arraybuffer';
     const decoder = new TextDecoder('utf-8');
     socket.onmessage = function(ev) {
-        status.classList.remove('disconnected');
-        status.classList.add('connected');
         terminal.write(decoder.decode(ev.data));
      };
     socket.onopen = function() {
@@ -27,7 +25,7 @@
         status.classList.add('connected');
         socket.send(feedId);
     };
-    socket.onclose = function(ev) {
+    socket.onclose = function() {
         status.classList.remove('connected');
         status.classList.add('disconnected');
         terminal.options.cursorBlink = false;

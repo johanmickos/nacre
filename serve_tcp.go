@@ -70,7 +70,7 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
 	sid := NewUUID()
-	msg := fmt.Sprintf("Connected to nacre\n%s/feed/%s\n", s.httpAddress, sid)
+	msg := fmt.Sprintf("Connected to nacre\n%s\n", liveFeedURL(s.httpAddress, sid))
 	n, err := conn.Write([]byte(msg))
 	if err != nil {
 		log.Printf("error: conn.Write: %s\n", err.Error())
@@ -112,4 +112,17 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 			return
 		}
 	}
+}
+
+// TODO Move to domain name & HTTP/HTTPS-aware config struct
+func liveFeedURL(baseURL string, id string) string {
+	return fmt.Sprintf("http://%s/feed/%s", baseURL, id)
+}
+
+func plaintextURL(baseURL string, id string) string {
+	return fmt.Sprintf("http://%s/plaintext/%s", baseURL, id)
+}
+
+func homeURL(baseURL string) string {
+	return fmt.Sprintf("http://%s", baseURL)
 }

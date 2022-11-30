@@ -75,9 +75,13 @@ func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := struct {
-		FeedID string
+		FeedID       string
+		PlaintextURL template.URL
+		HomeURL      template.URL
 	}{
-		FeedID: parts[1],
+		FeedID:       parts[1],
+		PlaintextURL: template.URL(plaintextURL(s.address, parts[1])),
+		HomeURL:      template.URL(homeURL(s.address)),
 	}
 	if err := liveFeedTemplate.Execute(rw, data); err != nil {
 		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
@@ -135,8 +139,6 @@ func (s HTTPServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 		log.Printf("error: invalid msgType %v", msgType)
 		return
 	}
-
-	log.Printf("Handling message %s with type %v", msg, msgType)
 
 	peer := &Peer{
 		conn: conn,
