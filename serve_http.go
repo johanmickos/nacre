@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	homeTemplate          = template.Must(template.ParseFiles("./templates/home.gohtml"))
 	liveFeedTemplate      = template.Must(template.ParseFiles("./templates/liveFeed.gohtml"))
 	plaintextFeedTemplate = template.Must(template.ParseFiles("./templates/plaintextFeed.gohtml"))
 )
@@ -49,7 +50,7 @@ func NewHTTPServer(address string, hub Hub) *HTTPServer {
 	server.mux.Handle("/feed/", middleware(http.HandlerFunc(server.handleFeed)))
 	server.mux.Handle("/plaintext/", middleware(http.HandlerFunc(server.handlePlaintext)))
 	server.mux.Handle("/websocket", middleware(http.HandlerFunc(server.handleWebsocket)))
-	server.mux.Handle("/", middleware(http.HandlerFunc(handleInfo)))
+	server.mux.Handle("/", middleware(http.HandlerFunc(handleHome)))
 	return server
 }
 
@@ -58,9 +59,11 @@ func (s *HTTPServer) Serve() error {
 	return http.ListenAndServe(s.address, s.mux)
 }
 
-func handleInfo(rw http.ResponseWriter, r *http.Request) {
-	rw.WriteHeader(http.StatusOK)
-	rw.Write([]byte("OK"))
+func handleHome(rw http.ResponseWriter, r *http.Request) {
+	if err := homeTemplate.Execute(rw, nil); err != nil {
+		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
