@@ -1,11 +1,1 @@
-<!DOCTYPE html>
-<html lang="en-US">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>nacre - {{ .FeedID }}</title>
-  </head>
-  <body>
-    <pre>{{ range .Entries }}{{ . }}{{ end }}</pre>
-  </body>
-</html>
+{{ range .Entries }}{{ . }}{{ end }}

@@ -116,6 +116,7 @@ func (s HTTPServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 	for i, entry := range entries {
 		data.Entries[i] = string(entry)
 	}
+	rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	if err := plaintextFeedTemplate.Execute(rw, data); err != nil {
 		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
 		return
