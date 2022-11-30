@@ -34,27 +34,42 @@ body {
   height: 100%;
 }
 
+
 #status {
   font-family: "Menlo", "DejaVu Sans Mono", "Lucida Console", monospace;
   color: orange;
-  margin: 3px;
+  text-shadow: 0 0 8px orange;
+  margin-bottom: 1rem;
 }
 
-#status::before {
-  content: "⬤ WAITING";
+#status #state::before {
+  content: "WAITING";
+}
+
+@keyframes pulseStatusConnected {
+    0% {color: rgb(0, 85, 0);}
+    15% {color: green;}
+    85% {color: green;}
+    100% {color: rgb(0, 85, 0);}
 }
 
 #status.connected {
   color: green;
+  text-shadow: 0 0 8px green;
 }
 
-#status.connected::before {
-  content: "⬤ LIVE";
+#status.connected #indicator {
+  animation: pulseStatusConnected 3.5s infinite;
+}
+
+#status.connected #state::before {
+  content: "LIVE";
 }
 
 #status.disconnected{
   color: rgb(163, 0, 0);
+  text-shadow: 0 0 8px rgb(163, 0, 0);
 }
-#status.disconnected::before {
-  content: "⬤ CLOSED";
+#status.disconnected #state::before {
+  content: "CLOSED";
 }
