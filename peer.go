@@ -24,11 +24,7 @@ type Peer struct {
 }
 
 func (peer *Peer) readLoop(ctx context.Context) error {
-	defer func() {
-		// TODO Unregister from peer management
-		peer.conn.Close()
-		log.Printf("Connection closed")
-	}()
+	defer peer.conn.Close()
 	peer.conn.SetReadLimit(maxReadBytes)
 	peer.conn.SetReadDeadline(time.Now().Add(pongDeadline))
 	peer.conn.SetPongHandler(func(string) error {
@@ -44,8 +40,13 @@ func (peer *Peer) readLoop(ctx context.Context) error {
 		}
 		_, _, err := peer.conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+			if websocket.IsUnexpectedCloseError(
+				err,
+				websocket.CloseNormalClosure,
+				websocket.CloseGoingAway,
+				websocket.CloseAbnormalClosure,
+			) {
+				log.Printf("websocket error: %v", err)
 				return err
 			}
 			return nil
@@ -63,12 +64,12 @@ func (peer *Peer) writeLoop(ctx context.Context, id string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			_ = peer.conn.WriteMessage(websocket.CloseMessage, nil)
+			_ = peer.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseGoingAway, "Request context completed"))
 			return ctx.Err()
 		case message, ok := <-data:
 			peer.conn.SetWriteDeadline(time.Now().Add(writeDeadline))
 			if !ok {
-				_ = peer.conn.WriteMessage(websocket.CloseMessage, nil)
+				_ = peer.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Data channel closed"))
 				return nil
 			}
 			if err := peer.conn.WriteMessage(websocket.BinaryMessage, message); err != nil {

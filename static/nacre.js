@@ -21,13 +21,18 @@
         terminal.write(decoder.decode(ev.data));
      };
     socket.onopen = function() {
-        status.classList.remove('disconncted');
+        status.classList.remove('disconncted', 'error');
         status.classList.add('connected');
         socket.send(feedId);
     };
     socket.onclose = function() {
-        status.classList.remove('connected');
+        status.classList.remove('connected', 'error');
         status.classList.add('disconnected');
+        terminal.options.cursorBlink = false;
+    };
+    socket.onerror = function() {
+        status.classList.remove('connected', 'disconnected');
+        status.classList.add('error');
         terminal.options.cursorBlink = false;
     };
 }());

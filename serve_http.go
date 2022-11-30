@@ -85,7 +85,6 @@ func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 	}
 	if err := liveFeedTemplate.Execute(rw, data); err != nil {
 		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
-		log.Printf("Could not execute template: %v", err)
 		return
 	}
 }
@@ -119,7 +118,6 @@ func (s HTTPServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 	}
 	if err := plaintextFeedTemplate.Execute(rw, data); err != nil {
 		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
-		log.Printf("Could not execute template: %v", err)
 		return
 	}
 }
@@ -132,11 +130,9 @@ func (s HTTPServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 	}
 	msgType, msg, err := conn.ReadMessage()
 	if err != nil {
-		log.Fatal(err) // FIXME
 		return
 	}
 	if msgType != websocket.TextMessage {
-		log.Printf("error: invalid msgType %v", msgType)
 		return
 	}
 

@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	clientConnectedHeartbeat = time.Second * 1
+	clientConnectedHeartbeat    = time.Second * 2
+	clientConnectionReadTimeout = time.Minute * 1
 )
 
 // TCPServer handles nacre's TCP clients and their data streams.
@@ -81,18 +82,28 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	_ = s.hub.ClientConnected(ctx, sid)
+	heartbeatCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	defer s.hub.ClientDisconnected(ctx, sid)
+	go func() {
+		heartbeat := time.NewTicker(clientConnectedHeartbeat)
+		_ = s.hub.ClientConnected(heartbeatCtx, sid)
+		for {
+			select {
+			case <-heartbeatCtx.Done():
+				return
+			case <-heartbeat.C:
+				_ = s.hub.ClientConnected(ctx, sid)
+			}
+		}
+	}()
 
-	heartbeat := time.NewTicker(clientConnectedHeartbeat)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-s.quit:
 			return
-		case <-heartbeat.C:
-			_ = s.hub.ClientConnected(ctx, sid)
 		default:
 			// Continue serving client
 		}
