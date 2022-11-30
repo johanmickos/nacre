@@ -12,8 +12,8 @@ const (
 	maxReadBytes = 256
 
 	writeDeadline = time.Second * 10
-	pongDeadline  = time.Second * 60
-	pingPeriod    = time.Second * 45
+	pongDeadline  = time.Second * 8
+	pingPeriod    = time.Second * 5
 )
 
 // Peer represents a connected websocket peer and is responsible for
