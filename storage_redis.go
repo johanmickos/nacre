@@ -71,7 +71,11 @@ func (s *redisStorage) Listen(ctx context.Context, id string) (<-chan []byte, er
 				Block:   blockTimeout,
 			}
 			streamData, err := s.client.XRead(ctx, args).Result()
+			// TODO Query client connection state and return early when closed
 			if err != nil {
+				if err == redis.Nil {
+					continue
+				}
 				return
 			}
 			messages := streamData[0].Messages
