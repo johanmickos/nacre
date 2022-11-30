@@ -20,7 +20,7 @@ const (
 // driving the websocket read/write loops and peer connection maangement.
 type Peer struct {
 	conn *websocket.Conn
-	hub  *Hub
+	hub  Hub
 }
 
 func (peer *Peer) readLoop(ctx context.Context) error {
@@ -46,15 +46,16 @@ func (peer *Peer) readLoop(ctx context.Context) error {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
+				return err
 			}
-			return err
+			return nil
 		}
 	}
 }
 
 // writeLoop pushes stream data to the connected peer.
 func (peer *Peer) writeLoop(ctx context.Context, id string) error {
-	data, err := peer.hub.PeerListen(ctx, id)
+	data, err := peer.hub.Listen(ctx, id)
 	if err != nil {
 		return err
 	}

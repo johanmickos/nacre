@@ -18,8 +18,7 @@ var (
 // HTTPServer handles nacre's HTTP requests and websocket upgrades.
 type HTTPServer struct {
 	quit       chan struct{}
-	storage    Storage
-	hub        *Hub
+	hub        Hub
 	mux        *http.ServeMux
 	wsUpgrader websocket.Upgrader
 
@@ -28,12 +27,11 @@ type HTTPServer struct {
 }
 
 // NewHTTPServer allocates a HTTP server for serving nacre's HTTP traffic.
-func NewHTTPServer(address string, hub *Hub, storage Storage) *HTTPServer {
+func NewHTTPServer(address string, hub Hub) *HTTPServer {
 	server := &HTTPServer{
-		quit:    make(chan struct{}),
-		storage: storage,
-		hub:     hub,
-		mux:     http.NewServeMux(),
+		quit: make(chan struct{}),
+		hub:  hub,
+		mux:  http.NewServeMux(),
 		wsUpgrader: websocket.Upgrader{
 			WriteBufferSize: 1024,
 			ReadBufferSize:  1024,
@@ -100,7 +98,7 @@ func (s HTTPServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := parts[1]
-	entries, err := s.storage.GetAll(r.Context(), id)
+	entries, err := s.hub.GetAll(r.Context(), id)
 	if err != nil {
 		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
 		return

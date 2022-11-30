@@ -24,13 +24,12 @@ func main() {
 		Password: "",
 		DB:       0,
 	})
-	storage := nacre.NewRedisStorage(redisClient)
-	hub := nacre.NewHub(storage)
-	tcpServer, err := nacre.NewTCPServer(tcpAddress, httpAddress, storage)
+	hub := nacre.NewRedisHub(redisClient)
+	tcpServer, err := nacre.NewTCPServer(tcpAddress, httpAddress, hub)
 	if err != nil {
 		panic(err)
 	}
-	httpServer := nacre.NewHTTPServer(httpAddress, hub, storage)
+	httpServer := nacre.NewHTTPServer(httpAddress, hub)
 
 	// TODO Propagate signal, gracefully shut down server
 	group.Go(func() error {
