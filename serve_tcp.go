@@ -7,6 +7,11 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
+)
+
+const (
+	clientConnectedHeartbeat = time.Second * 1
 )
 
 // TCPServer handles nacre's TCP clients and their data streams.
@@ -62,11 +67,8 @@ func (s *TCPServer) Serve(ctx context.Context) {
 // handle the connection by reading incoming bytes and pushing them to
 // the Hub implementation.
 func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
-	// TODO Indicate connection closure to peers via Hub
-	defer func() {
-		conn.Close()
+	defer conn.Close()
 
-	}()
 	sid := NewUUID()
 	msg := fmt.Sprintf("Connected to nacre\n%s/feed/%s\n", s.httpAddress, sid)
 	n, err := conn.Write([]byte(msg))
@@ -78,12 +80,19 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 		log.Printf("error: conn.Write: wrote %d/%d bytes\n", n, len(msg))
 		return
 	}
+
+	_ = s.hub.ClientConnected(ctx, sid)
+	defer s.hub.ClientDisconnected(ctx, sid)
+
+	heartbeat := time.NewTicker(clientConnectedHeartbeat)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-s.quit:
 			return
+		case <-heartbeat.C:
+			_ = s.hub.ClientConnected(ctx, sid)
 		default:
 			// Continue serving client
 		}

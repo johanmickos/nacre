@@ -16,13 +16,25 @@ type Hub interface {
 
 	AddPeer(ctx context.Context, id string) error
 	RemovePeer(ctx context.Context, id string) error
+	ClientState(ctx context.Context, id string) (ClientState, error)
 	ClientConnected(ctx context.Context, id string) error
 	ClientDisconnected(ctx context.Context, id string) error
 }
 
 const (
-	maxRedisStreamLen = 100
-	blockTimeout      = time.Second * 5
+	maxRedisStreamLen       = 100
+	blockTimeout            = time.Second * 5
+	clientConnectedDuration = time.Second * 15
+)
+
+// ClientState indicates whether the data-streaming client is still connected.
+type ClientState string
+
+// Possible client states.
+const (
+	ClientStateConnected    ClientState = "CONNECTED"
+	ClientStateDisconnected ClientState = "DISCONNECTED"
+	ClientStateUnknown      ClientState = "UNKNOWN"
 )
 
 type redisHub struct {
@@ -56,6 +68,7 @@ func (hub *redisHub) Listen(ctx context.Context, id string) (<-chan []byte, erro
 	ch := make(chan []byte)
 
 	go func() {
+		// TODO Refactor listen loop to reuse code
 		defer close(ch)
 
 		stream := streamName(id)
@@ -76,14 +89,22 @@ func (hub *redisHub) Listen(ctx context.Context, id string) (<-chan []byte, erro
 				return
 			}
 		}
+
 		lastSeenID := messages[len(messages)-1].ID
 		for {
+			state, err := hub.ClientState(ctx, id)
+			if err != nil {
+				return
+			}
+			if state == ClientStateDisconnected {
+				return
+			}
+
 			args := &redis.XReadArgs{
 				Streams: []string{stream, lastSeenID},
 				Block:   blockTimeout,
 			}
 			streamData, err := hub.client.XRead(ctx, args).Result()
-			// TODO Query client connection state and return early when closed
 			if err != nil {
 				if err == redis.Nil {
 					continue
@@ -100,7 +121,6 @@ func (hub *redisHub) Listen(ctx context.Context, id string) (<-chan []byte, erro
 					return
 				}
 			}
-
 		}
 	}()
 
@@ -125,9 +145,31 @@ func (hub *redisHub) GetAll(ctx context.Context, id string) ([][]byte, error) {
 	return results, nil
 }
 
-func (hub *redisHub) AddPeer(ctx context.Context, id string) error            { return nil }
-func (hub *redisHub) RemovePeer(ctx context.Context, id string) error         { return nil }
-func (hub *redisHub) ClientConnected(ctx context.Context, id string) error    { return nil }
-func (hub *redisHub) ClientDisconnected(ctx context.Context, id string) error { return nil }
+func (hub *redisHub) AddPeer(ctx context.Context, id string) error    { return nil }
+func (hub *redisHub) RemovePeer(ctx context.Context, id string) error { return nil }
+
+func (hub *redisHub) ClientState(ctx context.Context, id string) (ClientState, error) {
+	state, err := hub.client.Get(ctx, clientKey(id)).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return ClientStateDisconnected, nil
+		}
+		return ClientStateUnknown, err
+	}
+	return ClientState(state), nil
+}
+
+func (hub *redisHub) ClientConnected(ctx context.Context, id string) error {
+	return hub.client.Set(ctx, clientKey(id), string(ClientStateConnected), clientConnectedDuration).Err()
+}
+
+func (hub *redisHub) ClientDisconnected(ctx context.Context, id string) error {
+	err := hub.client.Del(ctx, clientKey(id)).Err()
+	if err != redis.Nil {
+		return err
+	}
+	return nil
+}
 
 func streamName(id string) string { return fmt.Sprintf("nacre:feed:%s", id) }
+func clientKey(id string) string  { return fmt.Sprintf("nacre:client:%s", id) }
