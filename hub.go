@@ -68,7 +68,6 @@ func (hub *redisHub) Listen(ctx context.Context, id string) (<-chan []byte, erro
 	ch := make(chan []byte)
 
 	go func() {
-		// TODO Refactor listen loop to reuse code
 		defer close(ch)
 
 		stream := streamName(id)

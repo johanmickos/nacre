@@ -3,7 +3,6 @@ package nacre
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"sync"
@@ -107,13 +106,10 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 		default:
 			// Continue serving client
 		}
+		// TODO Bandwidth quota per IP
 		buf := make([]byte, s.bufsize) // NOTE: Could consider buffer pool to limit memory usage
 		nbytes, err := conn.Read(buf)
 		if err != nil {
-			if err == io.EOF {
-				// TODO Clean up, signal to connected HTTP clients
-				return
-			}
 			return
 		}
 		if nbytes == 0 {
