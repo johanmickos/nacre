@@ -18,21 +18,23 @@ var (
 
 // HTTPServer handles nacre's HTTP requests and websocket upgrades.
 type HTTPServer struct {
-	quit       chan struct{}
-	hub        Hub
-	mux        *http.ServeMux
-	wsUpgrader websocket.Upgrader
+	quit        chan struct{}
+	hub         Hub
+	rateLimiter RateLimiter
+	mux         *http.ServeMux
+	wsUpgrader  websocket.Upgrader
 
 	address string
 	bufsize int
 }
 
 // NewHTTPServer allocates a HTTP server for serving nacre's HTTP traffic.
-func NewHTTPServer(address string, hub Hub) *HTTPServer {
+func NewHTTPServer(address string, hub Hub, rateLimiter RateLimiter) *HTTPServer {
 	server := &HTTPServer{
-		quit: make(chan struct{}),
-		hub:  hub,
-		mux:  http.NewServeMux(),
+		quit:        make(chan struct{}),
+		hub:         hub,
+		rateLimiter: rateLimiter,
+		mux:         http.NewServeMux(),
 		wsUpgrader: websocket.Upgrader{
 			WriteBufferSize: 1024,
 			ReadBufferSize:  1024,

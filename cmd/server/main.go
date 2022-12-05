@@ -25,11 +25,12 @@ func main() {
 		DB:       0,
 	})
 	hub := nacre.NewRedisHub(redisClient)
-	tcpServer, err := nacre.NewTCPServer(tcpAddress, httpAddress, hub)
+	rateLimiter := nacre.NewInMemoryRateLimiter()
+	tcpServer, err := nacre.NewTCPServer(tcpAddress, httpAddress, hub, rateLimiter)
 	if err != nil {
 		panic(err)
 	}
-	httpServer := nacre.NewHTTPServer(httpAddress, hub)
+	httpServer := nacre.NewHTTPServer(httpAddress, hub, rateLimiter)
 
 	// TODO Propagate signal, gracefully shut down server
 	group.Go(func() error {

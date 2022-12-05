@@ -16,10 +16,11 @@ const (
 
 // TCPServer handles nacre's TCP clients and their data streams.
 type TCPServer struct {
-	listener net.Listener
-	quit     chan struct{}
-	wg       sync.WaitGroup
-	hub      Hub
+	listener    net.Listener
+	quit        chan struct{}
+	wg          sync.WaitGroup
+	hub         Hub
+	rateLimiter RateLimiter
 
 	address     string
 	httpAddress string
@@ -28,10 +29,11 @@ type TCPServer struct {
 
 // NewTCPServer returns a stoppable TCP server listening on
 // the provided adderss.
-func NewTCPServer(address string, httpAddress string, hub Hub) (*TCPServer, error) {
+func NewTCPServer(address string, httpAddress string, hub Hub, rateLimiter RateLimiter) (*TCPServer, error) {
 	server := &TCPServer{
 		quit:        make(chan struct{}),
 		hub:         hub,
+		rateLimiter: rateLimiter,
 		wg:          sync.WaitGroup{},
 		address:     address,
 		httpAddress: httpAddress,
