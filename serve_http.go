@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/websocket"
+	"github.com/jarlopez/nacre/ws"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -144,7 +145,7 @@ func (s HTTPServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	feedID := string(msg)
 	if canAdd := s.rateLimiter.TryAddPeer(ctx, feedID); !canAdd {
-		conn.WriteMessage(websocket.CloseMessage, []byte("Too many concurrent peers"))
+		_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(ws.CloseTooManyPeers, "Too many concurrent peers for this feed"))
 		return
 	}
 	defer s.rateLimiter.RemovePeer(ctx, feedID)

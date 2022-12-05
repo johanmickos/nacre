@@ -1,3 +1,5 @@
+const CLOSE_TOO_MANY_PEERS = 4001;
+
 (function() {
     const terminal = new Terminal({
         convertEol: true,
@@ -25,10 +27,18 @@
         status.classList.add('connected');
         socket.send(feedId);
     };
-    socket.onclose = function() {
+    socket.onclose = function(ev) {
         status.classList.remove('connected', 'error');
-        status.classList.add('disconnected');
         terminal.options.cursorBlink = false;
+        switch (ev.code) {
+            case CLOSE_TOO_MANY_PEERS:
+                status.classList.add('error');
+                const state = status.getElementsByClassName('details')[0];
+                state.innerHTML = ev.reason;
+                break;
+            default:
+                status.classList.add('disconnected');
+        }
     };
     socket.onerror = function() {
         status.classList.remove('connected', 'disconnected');

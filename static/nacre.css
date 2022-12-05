@@ -84,6 +84,10 @@ body {
   content: "CONNECTION ERROR";
 }
 
+#status .details {
+    margin-left: 1rem;
+}
+
 .crumbs {
   margin-bottom: 1rem;
 }
