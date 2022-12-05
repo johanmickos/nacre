@@ -76,8 +76,16 @@ func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "Bad request", http.StatusBadRequest)
 		return
 	}
-	if parts[0] != "feed" || len(parts[1]) == 0 {
+	feedID := parts[1]
+	if parts[0] != "feed" || len(feedID) == 0 {
 		http.Error(rw, "Bad request", http.StatusBadRequest)
+		return
+	}
+	if exists, err := s.hub.Exists(r.Context(), feedID); err != nil {
+		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		return
+	} else if !exists {
+		http.Error(rw, "Feed not found", http.StatusNotFound)
 		return
 	}
 	data := struct {
@@ -85,7 +93,7 @@ func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 		PlaintextURL template.URL
 		HomeURL      template.URL
 	}{
-		FeedID:       parts[1],
+		FeedID:       feedID,
 		PlaintextURL: template.URL(plaintextURL(s.address, parts[1])),
 		HomeURL:      template.URL(homeURL(s.address)),
 	}
@@ -144,6 +152,13 @@ func (s HTTPServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	feedID := string(msg)
+	if exists, err := s.hub.Exists(ctx, feedID); err != nil {
+		_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseInternalServerErr, "Internal error"))
+		return
+	} else if !exists {
+		_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(ws.CloseNotFound, "Feed not found"))
+		return
+	}
 	if canAdd := s.rateLimiter.TryAddPeer(ctx, feedID); !canAdd {
 		_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(ws.CloseTooManyPeers, "Too many concurrent peers for this feed"))
 		return

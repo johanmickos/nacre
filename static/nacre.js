@@ -1,4 +1,5 @@
 const CLOSE_TOO_MANY_PEERS = 4001;
+const CLOSE_NOT_FOUND = 4002;
 
 (function() {
     const terminal = new Terminal({
@@ -32,17 +33,18 @@ const CLOSE_TOO_MANY_PEERS = 4001;
         terminal.options.cursorBlink = false;
         switch (ev.code) {
             case CLOSE_TOO_MANY_PEERS:
-                status.classList.add('error');
-                const state = status.getElementsByClassName('details')[0];
-                state.innerHTML = ev.reason;
+            case CLOSE_NOT_FOUND:
+                socket.onerror(ev);
                 break;
             default:
                 status.classList.add('disconnected');
         }
     };
-    socket.onerror = function() {
+    socket.onerror = function(ev) {
         status.classList.remove('connected', 'disconnected');
         status.classList.add('error');
         terminal.options.cursorBlink = false;
+        const state = status.getElementsByClassName('details')[0];
+        state.innerHTML = ev.reason;
     };
 }());

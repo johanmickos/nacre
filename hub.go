@@ -23,7 +23,7 @@ type Hub interface {
 }
 
 const (
-	maxRedisStreamLen       = 100
+	maxRedisStreamLen       = 1000
 	blockTimeout            = time.Second * 5
 	clientConnectedDuration = time.Second * 15
 )

@@ -4,4 +4,5 @@ package ws
 // in nacre.
 const (
 	CloseTooManyPeers = 4001
+	CloseNotFound     = 4002
 )
