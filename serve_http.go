@@ -141,14 +141,21 @@ func (s HTTPServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 	if msgType != websocket.TextMessage {
 		return
 	}
+	ctx := r.Context()
+	feedID := string(msg)
+	if canAdd := s.rateLimiter.TryAddPeer(ctx, feedID); !canAdd {
+		conn.WriteMessage(websocket.CloseMessage, []byte("Too many concurrent peers"))
+		return
+	}
+	defer s.rateLimiter.RemovePeer(ctx, feedID)
 
 	peer := &Peer{
 		conn: conn,
 		hub:  s.hub,
 	}
 	g := new(errgroup.Group)
-	g.Go(func() error { return peer.readLoop(r.Context()) })
-	g.Go(func() error { return peer.writeLoop(r.Context(), string(msg)) })
+	g.Go(func() error { return peer.readLoop(ctx) })
+	g.Go(func() error { return peer.writeLoop(ctx, feedID) })
 	if err := g.Wait(); err != nil {
 		log.Printf("Internal error: %v", err)
 	}

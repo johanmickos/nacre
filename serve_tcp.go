@@ -71,6 +71,17 @@ func (s *TCPServer) Serve(ctx context.Context) {
 func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
+	clientIP, _, err := net.SplitHostPort(conn.RemoteAddr().String())
+	if err != nil {
+		conn.Write([]byte("nacre: internal error"))
+		return
+	}
+	if canAdd := s.rateLimiter.TryAddClient(ctx, clientIP); !canAdd {
+		conn.Write([]byte("nacre: too many concurrent feeds from your IP\n"))
+		return
+	}
+	defer s.rateLimiter.RemoveClient(ctx, clientIP)
+
 	sid := NewUUID()
 	msg := fmt.Sprintf("Connected to nacre\n%s\n", liveFeedURL(s.httpAddress, sid))
 	n, err := conn.Write([]byte(msg))
