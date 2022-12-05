@@ -10,6 +10,7 @@ import (
 
 // Hub is a central client/peer and streamed data management layer.
 type Hub interface {
+	Exists(ctx context.Context, id string) (bool, error)
 	Push(ctx context.Context, id string, data []byte) error
 	Listen(ctx context.Context, id string) (<-chan []byte, error)
 	GetAll(ctx context.Context, id string) ([][]byte, error)
@@ -48,6 +49,11 @@ func NewRedisHub(client *redis.Client) Hub {
 	return &redisHub{
 		client: client,
 	}
+}
+
+func (hub *redisHub) Exists(ctx context.Context, id string) (bool, error) {
+	exists, err := hub.client.Exists(ctx, streamName(id)).Result()
+	return exists > 0, err
 }
 
 func (hub *redisHub) Push(ctx context.Context, id string, data []byte) error {
