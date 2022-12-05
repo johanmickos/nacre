@@ -1,6 +1,7 @@
 package nacre
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 
 var (
 	homeTemplate          = template.Must(template.ParseFiles("./templates/home.gohtml"))
+	errorTemplate         = template.Must(template.ParseFiles("./templates/error.gohtml"))
 	liveFeedTemplate      = template.Must(template.ParseFiles("./templates/liveFeed.gohtml"))
 	plaintextFeedTemplate = template.Must(template.ParseFiles("./templates/plaintextFeed.gohtml"))
 )
@@ -64,7 +66,7 @@ func (s *HTTPServer) Serve() error {
 
 func handleHome(rw http.ResponseWriter, r *http.Request) {
 	if err := homeTemplate.Execute(rw, nil); err != nil {
-		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		renderError(rw, r, nil)
 		return
 	}
 }
@@ -73,19 +75,19 @@ func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")[1:]
 	if len(parts) != 2 {
 		// ["feed", "${feedID}"]
-		http.Error(rw, "Bad request", http.StatusBadRequest)
+		renderError(rw, r, newBadRequestError("Unsupported path"))
 		return
 	}
 	feedID := parts[1]
 	if parts[0] != "feed" || len(feedID) == 0 {
-		http.Error(rw, "Bad request", http.StatusBadRequest)
+		renderError(rw, r, newBadRequestError("Unsupported path"))
 		return
 	}
 	if exists, err := s.hub.Exists(r.Context(), feedID); err != nil {
-		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		renderError(rw, r, nil)
 		return
 	} else if !exists {
-		http.Error(rw, "Feed not found", http.StatusNotFound)
+		renderError(rw, r, newNotFoundError(fmt.Sprintf("Feed %s does not exist", feedID)))
 		return
 	}
 	data := struct {
@@ -98,7 +100,7 @@ func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 		HomeURL:      template.URL(homeURL(s.address)),
 	}
 	if err := liveFeedTemplate.Execute(rw, data); err != nil {
-		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		renderError(rw, r, nil)
 		return
 	}
 }
@@ -107,17 +109,17 @@ func (s HTTPServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")[1:]
 	if len(parts) != 2 {
 		// ["plaintext", "${feedID}"]
-		http.Error(rw, "Bad request", http.StatusBadRequest)
+		renderError(rw, r, newBadRequestError("Unsupported path"))
 		return
 	}
 	if parts[0] != "plaintext" || len(parts[1]) == 0 {
-		http.Error(rw, "Bad request", http.StatusBadRequest)
+		renderError(rw, r, newBadRequestError("Unsupported path"))
 		return
 	}
 	id := parts[1]
 	entries, err := s.hub.GetAll(r.Context(), id)
 	if err != nil {
-		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		renderError(rw, r, nil)
 		return
 	}
 	data := struct {
@@ -132,7 +134,7 @@ func (s HTTPServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 	}
 	rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	if err := plaintextFeedTemplate.Execute(rw, data); err != nil {
-		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		renderError(rw, r, nil)
 		return
 	}
 }
@@ -199,4 +201,51 @@ func withRequestID(next http.Handler) http.Handler {
 		// TODO Inject logger w/ request ID into context
 		next.ServeHTTP(rw, r)
 	})
+}
+
+func renderError(rw http.ResponseWriter, r *http.Request, err *renderableError) {
+	data := renderableError{
+		StatusCode:  http.StatusInternalServerError,
+		Title:       "Something went wrong",
+		Name:        "Internal server error",
+		Description: "We experienced an unexpected error on our end.",
+	}
+	if err != nil {
+		data = *(err)
+	}
+	rw.Header().Set("X-Content-Type-Options", "nosniff")
+	rw.WriteHeader(data.StatusCode)
+
+	if err := errorTemplate.Execute(rw, data); err != nil {
+		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		return
+	}
+}
+
+type renderableError struct {
+	StatusCode  int
+	Title       string
+	Name        string
+	Description string
+	Details     string
+}
+
+func newBadRequestError(details string) *renderableError {
+	return &renderableError{
+		StatusCode:  http.StatusBadRequest,
+		Title:       "Bad Request",
+		Name:        "Invalid data",
+		Description: "The request could not be served",
+		Details:     details,
+	}
+}
+
+func newNotFoundError(details string) *renderableError {
+	return &renderableError{
+		StatusCode:  http.StatusNotFound,
+		Title:       "Resource Not Found",
+		Name:        "Invalid data",
+		Description: "The request resource was not found",
+		Details:     details,
+	}
 }

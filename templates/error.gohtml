@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="/static/home.css" />
+    <title>nacre</title>
+  </head>
+  <body>
+    <main>
+        <h1>{{ .Title }}</h1>
+        <p><strong>{{ .Name }}: </strong>{{ .Description }}</p>
+        {{ if ne .Details "" }}
+        <p>{{ .Details }}</p>
+        {{ end }}
+    </main>
+  </body>
+</html>
