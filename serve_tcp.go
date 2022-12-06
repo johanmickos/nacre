@@ -110,6 +110,7 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 		}
 	}()
 
+	buf := make([]byte, s.bufsize) // NOTE: Could consider buffer pool to limit memory usage
 	for {
 		select {
 		case <-ctx.Done():
@@ -120,7 +121,6 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 			// Continue serving client
 		}
 		// TODO Bandwidth quota per IP
-		buf := make([]byte, s.bufsize) // NOTE: Could consider buffer pool to limit memory usage
 		nbytes, err := conn.Read(buf)
 		if err != nil {
 			return
@@ -128,7 +128,7 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 		if nbytes == 0 {
 			return
 		}
-		if err := s.hub.Push(ctx, sid, buf[:nbytes]); err != nil {
+		if err := s.hub.Push(ctx, sid, buf[0:nbytes]); err != nil {
 			return
 		}
 	}
