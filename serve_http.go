@@ -66,7 +66,7 @@ func (s *HTTPServer) Serve() error {
 
 func handleHome(rw http.ResponseWriter, r *http.Request) {
 	if err := homeTemplate.Execute(rw, nil); err != nil {
-		renderError(rw, r, nil)
+		renderError(rw, r, err)
 		return
 	}
 }
@@ -84,7 +84,7 @@ func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if exists, err := s.hub.Exists(r.Context(), feedID); err != nil {
-		renderError(rw, r, nil)
+		renderError(rw, r, err)
 		return
 	} else if !exists {
 		renderError(rw, r, newNotFoundError(fmt.Sprintf("Feed %s does not exist", feedID)))
@@ -100,7 +100,7 @@ func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 		HomeURL:      template.URL(homeURL(s.address)),
 	}
 	if err := liveFeedTemplate.Execute(rw, data); err != nil {
-		renderError(rw, r, nil)
+		renderError(rw, r, err)
 		return
 	}
 }
@@ -119,7 +119,7 @@ func (s HTTPServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 	id := parts[1]
 	entries, err := s.hub.GetAll(r.Context(), id)
 	if err != nil {
-		renderError(rw, r, nil)
+		renderError(rw, r, err)
 		return
 	}
 	data := struct {
@@ -134,7 +134,7 @@ func (s HTTPServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 	}
 	rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	if err := plaintextFeedTemplate.Execute(rw, data); err != nil {
-		renderError(rw, r, nil)
+		renderError(rw, r, err)
 		return
 	}
 }
@@ -203,15 +203,16 @@ func withRequestID(next http.Handler) http.Handler {
 	})
 }
 
-func renderError(rw http.ResponseWriter, r *http.Request, err *renderableError) {
+func renderError(rw http.ResponseWriter, r *http.Request, err any) {
+	log.Printf("Rendering error: %v", err)
 	data := renderableError{
 		StatusCode:  http.StatusInternalServerError,
 		Title:       "Something went wrong",
 		Name:        "Internal server error",
 		Description: "We experienced an unexpected error on our end.",
 	}
-	if err != nil {
-		data = *(err)
+	if v, ok := err.(renderableError); ok {
+		data = v
 	}
 	rw.Header().Set("X-Content-Type-Options", "nosniff")
 	rw.WriteHeader(data.StatusCode)
@@ -230,8 +231,8 @@ type renderableError struct {
 	Details     string
 }
 
-func newBadRequestError(details string) *renderableError {
-	return &renderableError{
+func newBadRequestError(details string) renderableError {
+	return renderableError{
 		StatusCode:  http.StatusBadRequest,
 		Title:       "Bad Request",
 		Name:        "Invalid data",
@@ -240,8 +241,8 @@ func newBadRequestError(details string) *renderableError {
 	}
 }
 
-func newNotFoundError(details string) *renderableError {
-	return &renderableError{
+func newNotFoundError(details string) renderableError {
+	return renderableError{
 		StatusCode:  http.StatusNotFound,
 		Title:       "Resource Not Found",
 		Name:        "Invalid data",
