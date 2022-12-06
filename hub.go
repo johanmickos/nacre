@@ -22,10 +22,12 @@ type Hub interface {
 	ClientDisconnected(ctx context.Context, id string) error
 }
 
+// TODO Support these in external configuration file with defaults
 const (
-	maxRedisStreamLen       = 1000
-	blockTimeout            = time.Second * 5
-	clientConnectedDuration = time.Second * 15
+	maxRedisStreamLen            = 1000
+	maxStreamPersistenceDuration = time.Hour * 24
+	blockTimeout                 = time.Second * 5
+	clientConnectedDuration      = time.Second * 15
 )
 
 // ClientState indicates whether the data-streaming client is still connected.
@@ -57,8 +59,10 @@ func (hub *redisHub) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (hub *redisHub) Push(ctx context.Context, id string, data []byte) error {
-	args := &redis.XAddArgs{
-		Stream: streamName(id),
+	pipe := hub.client.Pipeline()
+	stream := streamName(id)
+	addCmd := pipe.XAdd(ctx, &redis.XAddArgs{
+		Stream: stream,
 		MaxLen: maxRedisStreamLen,
 		Approx: true,
 		// TODO Add relevant metadata to entries
@@ -66,8 +70,14 @@ func (hub *redisHub) Push(ctx context.Context, id string, data []byte) error {
 			"data": data,
 		},
 		ID: "*",
+	})
+	// Refresh expiration for this stream
+	// FIXME: Use ExpireGT if Redis v7 and higher
+	pipe.Expire(ctx, stream, maxStreamPersistenceDuration)
+	if _, err := pipe.Exec(ctx); err != nil {
+		return err
 	}
-	return hub.client.XAdd(ctx, args).Err()
+	return addCmd.Err()
 }
 
 func (hub *redisHub) Listen(ctx context.Context, id string) (<-chan []byte, error) {

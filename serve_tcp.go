@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// TODO Support these in external configuration file with defaults
 const (
 	clientConnectedHeartbeat    = time.Second * 2
 	clientConnectionReadTimeout = time.Minute * 1
@@ -117,8 +118,7 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 			return
 		case <-s.quit:
 			return
-		default:
-			// Continue serving client
+		default: // Continue serving client
 		}
 		// TODO Bandwidth quota per IP
 		nbytes, err := conn.Read(buf)
@@ -129,6 +129,7 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 			return
 		}
 		if err := s.hub.Push(ctx, sid, buf[0:nbytes]); err != nil {
+			log.Printf("Failed to push data: %s", err)
 			return
 		}
 	}
