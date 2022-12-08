@@ -47,9 +47,7 @@ func NewHTTPServer(address string, hub Hub, rateLimiter RateLimiter) *HTTPServer
 		bufsize: 1024,
 	}
 
-	middleware := func(next http.Handler) http.Handler {
-		return withRecovery(withRequestID(next))
-	}
+	middleware := func(next http.Handler) http.Handler { return withRecovery(withRequestID(next)) }
 
 	server.mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	server.mux.Handle("/feed/", middleware(http.HandlerFunc(server.handleFeed)))
@@ -83,7 +81,7 @@ func (s HTTPServer) handleFeed(rw http.ResponseWriter, r *http.Request) {
 		renderError(rw, r, newBadRequestError("Unsupported path"))
 		return
 	}
-	if exists, err := s.hub.Exists(r.Context(), feedID); err != nil {
+	if exists, err := s.hub.FeedExists(r.Context(), feedID); err != nil {
 		renderError(rw, r, err)
 		return
 	} else if !exists {
@@ -142,7 +140,7 @@ func (s HTTPServer) handlePlaintext(rw http.ResponseWriter, r *http.Request) {
 func (s HTTPServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 	conn, err := s.wsUpgrader.Upgrade(rw, r, nil)
 	if err != nil {
-		http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
+		renderError(rw, r, err)
 		return
 	}
 	msgType, msg, err := conn.ReadMessage()
@@ -154,7 +152,7 @@ func (s HTTPServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	feedID := string(msg)
-	if exists, err := s.hub.Exists(ctx, feedID); err != nil {
+	if exists, err := s.hub.FeedExists(ctx, feedID); err != nil {
 		_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseInternalServerErr, "Internal error"))
 		return
 	} else if !exists {
@@ -186,6 +184,7 @@ func withRecovery(next http.Handler) http.Handler {
 			if err == nil {
 				return
 			}
+			// TODO Unravel stack trace
 			log.Printf("panic: %v", err)
 			http.Error(rw, "An error occurred on our end", http.StatusInternalServerError)
 		}()

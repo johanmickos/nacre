@@ -1,3 +1,6 @@
+// Package for defining build tools used in this project
+// that are not critical for actually running the service.
+
 //go:build tools
 // +build tools
 

@@ -10,15 +10,25 @@ import (
 
 // Hub is a central client/peer and streamed data management layer.
 type Hub interface {
-	Exists(ctx context.Context, id string) (bool, error)
+	// FeedExists returns true if there is data for the identified feed.
+	FeedExists(ctx context.Context, id string) (bool, error)
+	// Push data to the identified feed.
 	Push(ctx context.Context, id string, data []byte) error
+	// Listen for data on the identified feed using the returned channel.
 	Listen(ctx context.Context, id string) (<-chan []byte, error)
+	// GetAll data entries for the identified feed.
 	GetAll(ctx context.Context, id string) ([][]byte, error)
 
+	// AddPeer for the identified feed.
 	AddPeer(ctx context.Context, id string) error
+	// RemovePeer from the identified feed.
 	RemovePeer(ctx context.Context, id string) error
+
+	// ClientState returns the current state of the client driving data to the identified feed.
 	ClientState(ctx context.Context, id string) (ClientState, error)
+	// ClientConnected updates the current state of the client to 'CONNECTED' for the identified feed.
 	ClientConnected(ctx context.Context, id string) error
+	// ClientConnected updates the current state of the client to 'DISCONNECTED' for the identified feed.
 	ClientDisconnected(ctx context.Context, id string) error
 }
 
@@ -53,7 +63,7 @@ func NewRedisHub(client *redis.Client) Hub {
 	}
 }
 
-func (hub *redisHub) Exists(ctx context.Context, id string) (bool, error) {
+func (hub *redisHub) FeedExists(ctx context.Context, id string) (bool, error) {
 	exists, err := hub.client.Exists(ctx, streamName(id)).Result()
 	return exists > 0, err
 }

@@ -37,13 +37,19 @@ type RateLimiter interface {
 	RemovePeer(ctx context.Context, id string) bool
 }
 
+// inMemoryRateLimiter is a barebones RateLimiter implementation for tracking clients and peers.
+// When the maximum number of concurrent clients/peers has been reached, TryAddPeer and TryAddClient
+// will return 'false' until their respective Remove{Peer, Client} operations have been called.
+//
+// Internally, inMemoryRateLimiter uses a channel-backed semaphore for keeping track of access
+// and a struct-global mutex for guarding access to the iner hashmaps.
 type inMemoryRateLimiter struct {
 	mu      sync.Mutex
 	clients map[string]semaphore
 	peers   map[string]semaphore
 
-	maxClientsPerIP   int
-	maxPeersPerFeedID int
+	maxClientsPerIP   int // Maximum # of concurrent clients per IP for this rate limiter
+	maxPeersPerFeedID int // Maximum # of concurrent peers per feed ID for this rate limiter
 
 	numRemovedClients   int
 	numRemovedPeers     int
@@ -57,11 +63,12 @@ type inMemoryRateLimiter struct {
 var _ RateLimiter = (*inMemoryRateLimiter)(nil)
 
 // NewInMemoryRateLimiter returns a memory-backed rate limiter for managing
-// incoming peer/client requests.
+// incoming peer/client requests. It also spins off a new background goroutine
+// for garbage collection, which can be stopped with inMemoryRateLimiter.Stop().
 //
-// Note that this implementation does not manage distributed state.
+// Note that this implementation does _not_ manage distributed state.
 // It only tracks local calls to the RateLimiter interface and can therefore
-// not accurately rate limit in a horizontally-scaled deployment.
+// not accurately rate limit in e.g. a horizontally-scaled deployment.
 func NewInMemoryRateLimiter() RateLimiter {
 	r := &inMemoryRateLimiter{
 		mu:                  sync.Mutex{},
@@ -71,8 +78,8 @@ func NewInMemoryRateLimiter() RateLimiter {
 		maxPeersPerFeedID:   3,
 		numRemovedClients:   0,
 		numRemovedPeers:     0,
-		gcMaxRemovedClients: 1_000_000,
-		gcMaxRemovedPeers:   1_000_000,
+		gcMaxRemovedClients: 10_000,
+		gcMaxRemovedPeers:   10_000,
 		gcPeriod:            time.Second * 30,
 		quit:                make(chan empty),
 	}
@@ -80,8 +87,12 @@ func NewInMemoryRateLimiter() RateLimiter {
 	return r
 }
 
+// Stop the background garbage collection goroutine.
+// Note that this will _block_ until the goroutine reads the 'quit' channel.
 func (r *inMemoryRateLimiter) Stop() { r.quit <- empty{} }
 
+// TryAddClient for the IP. Returns 'true' if the client is successfully added,
+// otherwise 'false'.
 func (r *inMemoryRateLimiter) TryAddClient(ctx context.Context, ip string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -97,6 +108,7 @@ func (r *inMemoryRateLimiter) TryAddClient(ctx context.Context, ip string) bool 
 	return false
 }
 
+// RemoveClient "returns" availability for concurrent clients for the IP.
 func (r *inMemoryRateLimiter) RemoveClient(ctx context.Context, ip string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -114,6 +126,8 @@ func (r *inMemoryRateLimiter) RemoveClient(ctx context.Context, ip string) bool 
 	}
 }
 
+// TryAddPeer for the feed ID. Returns 'true' if the peer is successfully added,
+// otherwise 'false'.
 func (r *inMemoryRateLimiter) TryAddPeer(ctx context.Context, id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -129,6 +143,7 @@ func (r *inMemoryRateLimiter) TryAddPeer(ctx context.Context, id string) bool {
 	return false
 }
 
+// RemovePeer "returns" availability for concurrent peers for the feed ID.
 func (r *inMemoryRateLimiter) RemovePeer(ctx context.Context, ip string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -2,7 +2,6 @@ package nacre
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -35,8 +34,7 @@ func (peer *Peer) readLoop(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		default:
-			// OK
+		default: // OK
 		}
 		_, _, err := peer.conn.ReadMessage()
 		if err != nil {
@@ -46,7 +44,6 @@ func (peer *Peer) readLoop(ctx context.Context) error {
 				websocket.CloseGoingAway,
 				websocket.CloseAbnormalClosure,
 			) {
-				log.Printf("websocket error: %v", err)
 				return err
 			}
 			return nil
@@ -54,7 +51,7 @@ func (peer *Peer) readLoop(ctx context.Context) error {
 	}
 }
 
-// writeLoop pushes stream data to the connected peer.
+// writeLoop pushes feed data to the connected peer.
 func (peer *Peer) writeLoop(ctx context.Context, id string) error {
 	data, err := peer.hub.Listen(ctx, id)
 	if err != nil {
