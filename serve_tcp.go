@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-// TODO Support these in external configuration file with defaults
 const (
 	clientConnectedHeartbeat    = time.Second * 2
 	clientConnectionReadTimeout = time.Minute * 1
@@ -23,13 +22,12 @@ type TCPServer struct {
 	hub         Hub
 	rateLimiter RateLimiter
 
-	address     string
-	httpAddress string
-	bufsize     int
+	address string
+	baseURL string
+	bufsize int
 }
 
-// NewTCPServer returns a stoppable TCP server listening on
-// the provided adderss.
+// NewTCPServer returns a stoppable TCP server listening on the provided address.
 func NewTCPServer(address string, httpAddress string, hub Hub, rateLimiter RateLimiter) (*TCPServer, error) {
 	server := &TCPServer{
 		quit:        make(chan struct{}),
@@ -37,8 +35,8 @@ func NewTCPServer(address string, httpAddress string, hub Hub, rateLimiter RateL
 		rateLimiter: rateLimiter,
 		wg:          sync.WaitGroup{},
 		address:     address,
-		httpAddress: httpAddress,
-		bufsize:     1024,
+		baseURL:     httpAddress,
+		bufsize:     1024 * 2,
 	}
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
@@ -84,7 +82,7 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 	defer s.rateLimiter.RemoveClient(ctx, clientIP)
 
 	sid := NewUUID()
-	msg := fmt.Sprintf("Connected to nacre\n%s\n", liveFeedURL(s.httpAddress, sid))
+	msg := fmt.Sprintf("Connected to nacre\n%s\n", liveFeedURL(s.baseURL, sid))
 	n, err := conn.Write([]byte(msg))
 	if err != nil {
 		log.Printf("error: conn.Write: %s\n", err.Error())
@@ -137,13 +135,13 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 
 // TODO Move to domain name & HTTP/HTTPS-aware config struct
 func liveFeedURL(baseURL string, id string) string {
-	return fmt.Sprintf("http://%s/feed/%s", baseURL, id)
+	return fmt.Sprintf("%s/feed/%s", baseURL, id)
 }
 
 func plaintextURL(baseURL string, id string) string {
-	return fmt.Sprintf("http://%s/plaintext/%s", baseURL, id)
+	return fmt.Sprintf("%s/plaintext/%s", baseURL, id)
 }
 
 func homeURL(baseURL string) string {
-	return fmt.Sprintf("http://%s", baseURL)
+	return baseURL
 }

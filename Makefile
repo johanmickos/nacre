@@ -29,7 +29,7 @@ clean:
 
 .PHONY: run
 run:
-	$(GO) run cmd/server/main.go
+	$(GO) run ./cmd/server
 
 .PHONY: check
 check: $(GOLINT) $(GOSTATICCHECK)

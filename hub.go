@@ -34,10 +34,8 @@ type Hub interface {
 
 // TODO Support these in external configuration file with defaults
 const (
-	maxRedisStreamLen            = 1000
-	maxStreamPersistenceDuration = time.Hour * 24
-	blockTimeout                 = time.Second * 5
-	clientConnectedDuration      = time.Second * 15
+	redisReadTimeout        = time.Second * 5
+	clientConnectedDuration = time.Second * 15
 )
 
 // ClientState indicates whether the data-streaming client is still connected.
@@ -52,14 +50,19 @@ const (
 
 type redisHub struct {
 	client *redis.Client
+
+	maxRedisStreamLen            int
+	maxStreamPersistenceDuration time.Duration
 }
 
 var _ Hub = (*redisHub)(nil)
 
 // NewRedisHub allocates a new Redis-backed hub implementation.
-func NewRedisHub(client *redis.Client) Hub {
+func NewRedisHub(client *redis.Client, maxRedisStreamLen int, maxStreamPersistenceDuration time.Duration) Hub {
 	return &redisHub{
-		client: client,
+		client:                       client,
+		maxRedisStreamLen:            maxRedisStreamLen,
+		maxStreamPersistenceDuration: maxStreamPersistenceDuration,
 	}
 }
 
@@ -73,7 +76,7 @@ func (hub *redisHub) Push(ctx context.Context, id string, data []byte) error {
 	stream := streamName(id)
 	addCmd := pipe.XAdd(ctx, &redis.XAddArgs{
 		Stream: stream,
-		MaxLen: maxRedisStreamLen,
+		MaxLen: int64(hub.maxRedisStreamLen),
 		Approx: true,
 		// TODO Add relevant metadata to entries
 		Values: map[string]any{
@@ -83,7 +86,7 @@ func (hub *redisHub) Push(ctx context.Context, id string, data []byte) error {
 	})
 	// Refresh expiration for this stream
 	// FIXME: Use ExpireGT if Redis v7 and higher
-	pipe.Expire(ctx, stream, maxStreamPersistenceDuration)
+	pipe.Expire(ctx, stream, hub.maxStreamPersistenceDuration)
 	if _, err := pipe.Exec(ctx); err != nil {
 		return err
 	}
@@ -127,7 +130,7 @@ func (hub *redisHub) Listen(ctx context.Context, id string) (<-chan []byte, erro
 
 			args := &redis.XReadArgs{
 				Streams: []string{stream, lastSeenID},
-				Block:   blockTimeout,
+				Block:   redisReadTimeout,
 			}
 			streamData, err := hub.client.XRead(ctx, args).Result()
 			if err != nil {
