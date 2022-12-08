@@ -96,18 +96,20 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 	heartbeatCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer s.hub.ClientDisconnected(ctx, sid)
-	go func() {
+	go func(ctx context.Context) {
 		heartbeat := time.NewTicker(clientConnectedHeartbeat)
-		_ = s.hub.ClientConnected(heartbeatCtx, sid)
+		_ = s.hub.ClientConnected(ctx, sid)
 		for {
 			select {
-			case <-heartbeatCtx.Done():
+			case <-ctx.Done():
+				return
+			case <-s.quit:
 				return
 			case <-heartbeat.C:
 				_ = s.hub.ClientConnected(ctx, sid)
 			}
 		}
-	}()
+	}(heartbeatCtx)
 
 	buf := make([]byte, s.bufsize) // NOTE: Could consider buffer pool to limit memory usage
 	for {
