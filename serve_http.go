@@ -28,12 +28,11 @@ type HTTPServer struct {
 	wsUpgrader  websocket.Upgrader
 
 	address string
-	baseURL string
 	bufsize int
 }
 
 // NewHTTPServer allocates a HTTP server for serving nacre's HTTP traffic.
-func NewHTTPServer(address string, baseURL string, hub Hub, rateLimiter RateLimiter) *HTTPServer {
+func NewHTTPServer(address string, hub Hub, rateLimiter RateLimiter) *HTTPServer {
 	server := &HTTPServer{
 		quit:        make(chan struct{}),
 		hub:         hub,

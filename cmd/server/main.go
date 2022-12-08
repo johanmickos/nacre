@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	cfg, err := ParseConfig()
+	cfg, err := parseConfig()
 	if err != nil {
 		log.Fatal("Failed to parse configuration: ", err)
 	}
@@ -32,7 +32,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	httpServer := nacre.NewHTTPServer(cfg.App.HTTPAddr, cfg.App.BaseURL, hub, rateLimiter)
+	httpServer := nacre.NewHTTPServer(cfg.App.HTTPAddr, hub, rateLimiter)
 
 	// TODO Propagate signal, gracefully shut down server
 	group.Go(func() error {

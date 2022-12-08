@@ -8,13 +8,13 @@ import (
 	"time"
 )
 
-type RedisConfig struct {
+type redisConfig struct {
 	Host     string
 	Port     string
 	Password string
 }
 
-type NacreConfig struct {
+type appConfig struct {
 	TCPAddr              string
 	HTTPAddr             string
 	BaseURL              string
@@ -22,19 +22,19 @@ type NacreConfig struct {
 	MaxStreamPersistence time.Duration
 }
 
-type Config struct {
-	Redis RedisConfig
-	App   NacreConfig
+type config struct {
+	Redis redisConfig
+	App   appConfig
 }
 
-func ParseConfig() (Config, error) {
-	cfg := Config{
-		Redis: RedisConfig{
+func parseConfig() (config, error) {
+	cfg := config{
+		Redis: redisConfig{
 			Host:     "localhost",
 			Port:     "6379",
 			Password: "",
 		},
-		App: NacreConfig{
+		App: appConfig{
 			TCPAddr:              ":1337",
 			HTTPAddr:             ":8080",
 			BaseURL:              "http://localhost:8080",
@@ -77,9 +77,9 @@ func ParseConfig() (Config, error) {
 	return cfg, nil
 }
 
-func (c Config) String() string { return c.JSONString() }
+func (c config) String() string { return c.JSONString() }
 
-func (c Config) JSONString() string {
+func (c config) JSONString() string {
 	c.Redis.Password = "**REDACTED**"
 	raw, err := json.MarshalIndent(c, "(cfg)", "\t")
 	if err != nil {
