@@ -40,7 +40,7 @@ func main() {
 		return nil
 	})
 	group.Go(func() error {
-		return httpServer.Serve()
+		return httpServer.Serve(rootCtx)
 	})
 	if err := group.Wait(); err != nil {
 		panic(err)

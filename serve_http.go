@@ -1,9 +1,11 @@
 package nacre
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 
@@ -21,7 +23,7 @@ var (
 
 // HTTPServer handles nacre's HTTP requests and websocket upgrades.
 type HTTPServer struct {
-	quit        chan struct{}
+	inner       *http.Server
 	hub         Hub
 	rateLimiter RateLimiter
 	mux         *http.ServeMux
@@ -33,11 +35,15 @@ type HTTPServer struct {
 
 // NewHTTPServer allocates a HTTP server for serving nacre's HTTP traffic.
 func NewHTTPServer(address string, hub Hub, rateLimiter RateLimiter) *HTTPServer {
+	mux := http.NewServeMux()
 	server := &HTTPServer{
-		quit:        make(chan struct{}),
 		hub:         hub,
 		rateLimiter: rateLimiter,
-		mux:         http.NewServeMux(),
+		inner: &http.Server{
+			Addr:    address,
+			Handler: mux,
+		},
+		mux: mux,
 		wsUpgrader: websocket.Upgrader{
 			WriteBufferSize: 1024,
 			ReadBufferSize:  1024,
@@ -46,7 +52,6 @@ func NewHTTPServer(address string, hub Hub, rateLimiter RateLimiter) *HTTPServer
 		address: address,
 		bufsize: 1024,
 	}
-
 	middleware := func(next http.Handler) http.Handler { return withRecovery(withRequestID(next)) }
 
 	server.mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
@@ -58,8 +63,14 @@ func NewHTTPServer(address string, hub Hub, rateLimiter RateLimiter) *HTTPServer
 }
 
 // Serve HTTP traffic on the configured address.
-func (s *HTTPServer) Serve() error {
-	return http.ListenAndServe(s.address, s.mux)
+func (s *HTTPServer) Serve(ctx context.Context) error {
+	s.inner.BaseContext = func(l net.Listener) context.Context { return ctx }
+	return s.inner.ListenAndServe()
+}
+
+// Shutdown delegates to the inner http.Server's shutdown function.
+func (s *HTTPServer) Shutdown(ctx context.Context) error {
+	return s.inner.Shutdown(ctx)
 }
 
 func handleHome(rw http.ResponseWriter, r *http.Request) {
