@@ -33,7 +33,7 @@ func (peer *Peer) readLoop(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil
 		default: // OK
 		}
 		_, _, err := peer.conn.ReadMessage()
@@ -61,16 +61,20 @@ func (peer *Peer) writeLoop(ctx context.Context, id string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			_ = peer.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseGoingAway, "Request context completed"))
-			return ctx.Err()
+			return peer.conn.WriteMessage(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.CloseGoingAway, "Request context completed"),
+			)
 		case message, ok := <-data:
 			peer.conn.SetWriteDeadline(time.Now().Add(writeDeadline))
 			if !ok {
-				_ = peer.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Data channel closed"))
-				return nil
+				return peer.conn.WriteMessage(
+					websocket.CloseMessage,
+					websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Data channel closed"),
+				)
 			}
 			if err := peer.conn.WriteMessage(websocket.BinaryMessage, message); err != nil {
-				return nil
+				return err
 			}
 		case <-ticker.C:
 			peer.conn.SetWriteDeadline(time.Now().Add(writeDeadline))
