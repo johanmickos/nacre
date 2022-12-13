@@ -1,20 +1,56 @@
-package main
+package nacre
 
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/go-redis/redis/v9"
 )
 
-type redisConfig struct {
+// Root is the root struct defining the nacre server dependencies.
+type Root struct {
+	Cfg Config
+
+	Hub  Hub
+	HTTP *HTTPServer
+	TCP  *TCPServer
+}
+
+// DefaultServer returns a Root nacre instance with the default configuration and setup.
+func DefaultServer(cfg Config) (Root, error) {
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     net.JoinHostPort(cfg.Redis.Host, cfg.Redis.Port),
+		Password: cfg.Redis.Password,
+		DB:       0,
+	})
+	hub := NewRedisHub(redisClient, cfg.App.MaxRedisStreamLen, cfg.App.MaxStreamPersistence)
+	rateLimiter := NewInMemoryRateLimiter()
+	tcpServer, err := NewTCPServer(cfg.App.TCPAddr, cfg.App.BaseURL, hub, rateLimiter)
+	if err != nil {
+		return Root{}, nil
+	}
+	httpServer := NewHTTPServer(cfg.App.HTTPAddr, hub, rateLimiter)
+	return Root{
+		Cfg:  cfg,
+		Hub:  hub,
+		HTTP: httpServer,
+		TCP:  tcpServer,
+	}, nil
+}
+
+// RedisConfig exposes Redis-specific configuration options.
+type RedisConfig struct {
 	Host     string
 	Port     string
 	Password string
 }
 
-type appConfig struct {
+// AppConfig exposes Nacre-specific configuration options.
+type AppConfig struct {
 	TCPAddr              string
 	HTTPAddr             string
 	BaseURL              string
@@ -22,19 +58,22 @@ type appConfig struct {
 	MaxStreamPersistence time.Duration
 }
 
-type config struct {
-	Redis redisConfig
-	App   appConfig
+// Config is the root structure containing Nacre configuration.
+type Config struct {
+	Redis RedisConfig
+	App   AppConfig
 }
 
-func parseConfig() (config, error) {
-	cfg := config{
-		Redis: redisConfig{
+// ParseConfig returns the default Nacre configuration merged with overridden configurations
+// from environment variables.
+func ParseConfig() (Config, error) {
+	cfg := Config{
+		Redis: RedisConfig{
 			Host:     "localhost",
 			Port:     "6379",
 			Password: "",
 		},
-		App: appConfig{
+		App: AppConfig{
 			TCPAddr:              ":1337",
 			HTTPAddr:             ":8080",
 			BaseURL:              "http://localhost:8080",
@@ -77,9 +116,10 @@ func parseConfig() (config, error) {
 	return cfg, nil
 }
 
-func (c config) String() string { return c.JSONString() }
+func (c Config) String() string { return c.JSONString() }
 
-func (c config) JSONString() string {
+// JSONString returns a JSON-like representation of the configuration.
+func (c Config) JSONString() string {
 	c.Redis.Password = "**REDACTED**"
 	raw, err := json.MarshalIndent(c, "(cfg)", "\t")
 	if err != nil {

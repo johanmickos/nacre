@@ -3,15 +3,13 @@ package main
 import (
 	"context"
 	"log"
-	"net"
 
-	"github.com/go-redis/redis/v9"
 	"github.com/jarlopez/nacre"
 	"golang.org/x/sync/errgroup"
 )
 
 func main() {
-	cfg, err := parseConfig()
+	cfg, err := nacre.ParseConfig()
 	if err != nil {
 		log.Fatal("Failed to parse configuration: ", err)
 	}
@@ -21,26 +19,18 @@ func main() {
 	defer cancel()
 	group, rootCtx := errgroup.WithContext(rootCtx)
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     net.JoinHostPort(cfg.Redis.Host, cfg.Redis.Port),
-		Password: cfg.Redis.Password,
-		DB:       0,
-	})
-	hub := nacre.NewRedisHub(redisClient, cfg.App.MaxRedisStreamLen, cfg.App.MaxStreamPersistence)
-	rateLimiter := nacre.NewInMemoryRateLimiter()
-	tcpServer, err := nacre.NewTCPServer(cfg.App.TCPAddr, cfg.App.BaseURL, hub, rateLimiter)
+	nacreServer, err := nacre.DefaultServer(cfg)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to initialize nacre server: %v", err)
 	}
-	httpServer := nacre.NewHTTPServer(cfg.App.HTTPAddr, hub, rateLimiter)
 
 	// TODO Propagate signal, gracefully shut down server
 	group.Go(func() error {
-		tcpServer.Serve(rootCtx)
+		nacreServer.TCP.Serve(rootCtx)
 		return nil
 	})
 	group.Go(func() error {
-		return httpServer.Serve(rootCtx)
+		return nacreServer.HTTP.Serve(rootCtx)
 	})
 	if err := group.Wait(); err != nil {
 		panic(err)
