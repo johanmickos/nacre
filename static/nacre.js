@@ -1,7 +1,7 @@
 const CLOSE_TOO_MANY_PEERS = 4001;
 const CLOSE_NOT_FOUND = 4002;
 
-(function() {
+(function () {
     const terminal = new Terminal({
         convertEol: true,
         scrollback: 10_000,
@@ -10,25 +10,26 @@ const CLOSE_NOT_FOUND = 4002;
     });
     const fitAddon = new FitAddon.FitAddon();
     terminal.loadAddon(fitAddon);
-    terminal.open(document.getElementById('terminal'), {focus: true});
+    terminal.open(document.getElementById('terminal'), { focus: true });
     const status = document.getElementById('status');
     fitAddon.fit();
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
         fitAddon.fit();
     });
-    const url = 'ws://' + window.location.host + '/websocket';
+    const protocol = window.location.protocol.startsWith('https') ? "wss://" : "ws://"
+    const url = protocol + window.location.host + '/websocket';
     const socket = new WebSocket(url);
     socket.binaryType = 'arraybuffer';
     const decoder = new TextDecoder('utf-8');
-    socket.onmessage = function(ev) {
+    socket.onmessage = function (ev) {
         terminal.write(decoder.decode(ev.data));
-     };
-    socket.onopen = function() {
+    };
+    socket.onopen = function () {
         status.classList.remove('disconncted', 'error');
         status.classList.add('connected');
         socket.send(feedId);
     };
-    socket.onclose = function(ev) {
+    socket.onclose = function (ev) {
         status.classList.remove('connected', 'error');
         terminal.options.cursorBlink = false;
         switch (ev.code) {
@@ -40,7 +41,7 @@ const CLOSE_NOT_FOUND = 4002;
                 status.classList.add('disconnected');
         }
     };
-    socket.onerror = function(ev) {
+    socket.onerror = function (ev) {
         status.classList.remove('connected', 'disconnected');
         status.classList.add('error');
         terminal.options.cursorBlink = false;

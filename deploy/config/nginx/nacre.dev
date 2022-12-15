@@ -1,0 +1,24 @@
+server {
+    server_name nacre.dev www.nacre.dev;
+
+    location / {
+        root /var/www/html;
+        try_files $uri $uri/ @nacrebackend;
+    }
+
+    location @nacrebackend {
+        proxy_set_header X-Real-IP  $remote_addr;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://localhost:8080;
+    }
+
+    error_page 403 /403.html;
+    error_page 404 /404.html;
+    error_page 500 /500.html;
+    error_page 502 /502.html;
+
+    location = /404.html { root /var/www/html; internal; }
+    location = /500.html { root /var/www/html; internal; }
+    location = /502.html { root /var/www/html; internal; }
+}

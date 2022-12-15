@@ -22,6 +22,10 @@ build:
 	mkdir -p out/bin
 	$(GO) build -o out/bin/$(BINARY_NAME) ./cmd/server
 
+.PHONY: dockerbuild
+dockerbuild:
+	docker build -t nacre .
+
 .PHONY: clean
 clean:
 	@rm -rf out/bin
@@ -29,7 +33,7 @@ clean:
 
 .PHONY: run
 run:
-	$(GO) run ./cmd/server
+	docker compose -f docker-compose.local.yml up
 
 .PHONY: check
 check: $(GOLINT) $(GOSTATICCHECK)
