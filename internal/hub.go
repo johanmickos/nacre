@@ -19,11 +19,6 @@ type Hub interface {
 	// GetAll data entries for the identified feed.
 	GetAll(ctx context.Context, id string) ([][]byte, error)
 
-	// AddPeer for the identified feed.
-	AddPeer(ctx context.Context, id string) error
-	// RemovePeer from the identified feed.
-	RemovePeer(ctx context.Context, id string) error
-
 	// ClientState returns the current state of the client driving data to the identified feed.
 	ClientState(ctx context.Context, id string) (ClientState, error)
 	// ClientConnected updates the current state of the client to 'CONNECTED' for the identified feed.
@@ -172,9 +167,6 @@ func (hub *redisHub) GetAll(ctx context.Context, id string) ([][]byte, error) {
 	}
 	return results, nil
 }
-
-func (hub *redisHub) AddPeer(ctx context.Context, id string) error    { return nil }
-func (hub *redisHub) RemovePeer(ctx context.Context, id string) error { return nil }
 
 func (hub *redisHub) ClientState(ctx context.Context, id string) (ClientState, error) {
 	state, err := hub.client.Get(ctx, clientKey(id)).Result()
