@@ -1,7 +1,7 @@
 version: '3.9'
 services:
   nacre:
-    image: "nacre:latest"
+    build: .
     ports:
       - "80:8080"
       - "1337:1337"

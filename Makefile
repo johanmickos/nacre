@@ -33,7 +33,11 @@ clean:
 
 .PHONY: run
 run:
-	docker compose -f docker-compose.local.yml up
+	$(GO) run ./cmd/server
+
+.PHONY: dockerrun
+dockerrun:
+	docker compose -f docker-compose.local.yml up --build
 
 .PHONY: check
 check: $(GOLINT) $(GOSTATICCHECK)
