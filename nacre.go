@@ -31,7 +31,7 @@ func DefaultServer(cfg Config) (Root, error) {
 	rateLimiter := NewInMemoryRateLimiter()
 	tcpServer, err := NewTCPServer(cfg.App.TCPAddr, cfg.App.BaseURL, hub, rateLimiter)
 	if err != nil {
-		return Root{}, nil
+		return Root{}, err
 	}
 	httpServer := NewHTTPServer(cfg.App.HTTPAddr, hub, rateLimiter)
 	return Root{
