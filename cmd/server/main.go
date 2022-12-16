@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/jarlopez/nacre"
+	nacre "github.com/jarlopez/nacre/internal"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to parse configuration: ", err)
 	}
-	log.Print(cfg)
+	log.Print("Configuration: ", cfg)
 
 	rootCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()

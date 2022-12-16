@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/websocket"
-	"github.com/jarlopez/nacre/ws"
+	"github.com/jarlopez/nacre/internal/ws"
 	"golang.org/x/sync/errgroup"
 )
 

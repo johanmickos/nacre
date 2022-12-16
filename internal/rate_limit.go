@@ -17,7 +17,8 @@ import (
 // Instead, we can either
 // 1) deploy the Nacre instances behind a load balancer (like HAProxy)
 //     that has built-in support for these strategies, or
-// 2) extend in-application support for distributed rate limiting (e.g. via database-backed expiring semaphores)
+// 2) extend in-application support for distributed rate limiting
+//    (e.g. via database-backed expiring semaphores and bandwidth quotas)
 
 type empty struct{}
 type semaphore chan empty
