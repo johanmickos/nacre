@@ -1,14 +1,16 @@
+# docker-compose.yml: Sets up Redis and Nacre to serve
+# traffic behind nginx for production usage on https://nacre.dev
 version: '3.9'
 services:
   nacre:
     image: "nacre:latest"
     ports:
       - "8080:8080"
-      - "9090:1337"
+      - "9090:1337"                       # Matches nginx configuration of forwarding 1337->9090
     environment:
-      NACRE_TCP_ADDR: ":1337"   # Matches internal port listed above
-      NACRE_HTTP_ADDR: ":8080"  # Matches internal port listed above
-      NACRE_BASE_URL: "https://nacre.dev"
+      NACRE_TCP_ADDR: ":1337"             # Matches internal port listed above
+      NACRE_HTTP_ADDR: ":8080"            # Matches internal port listed above
+      NACRE_BASE_URL: "https://nacre.dev" # Matches the actual domain we're hosting Nacre on
       NACRE_MAX_STREAM_LEN: 1000
       NACRE_MAX_STREAM_PERSISTENCE: "24h0m0s"
       NACRE_REDIS_HOST: "redis"

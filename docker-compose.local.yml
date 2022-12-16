@@ -1,3 +1,5 @@
+# docker-compose.local.yml: Sets up Redis and Nacre to serve
+# data feed traffic on tcp://localhost:1337 and peer HTTP traffic on http://localhost:80
 version: '3.9'
 services:
   nacre:
