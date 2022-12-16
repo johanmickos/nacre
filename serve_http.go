@@ -54,6 +54,7 @@ func NewHTTPServer(address string, hub Hub, rateLimiter RateLimiter) *HTTPServer
 	}
 	middleware := func(next http.Handler) http.Handler { return withRecovery(withRequestID(next)) }
 
+	server.mux.Handle("/favicon.ico", http.HandlerFunc(handleFavicon))
 	server.mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	server.mux.Handle("/feed/", middleware(http.HandlerFunc(server.handleFeed)))
 	server.mux.Handle("/plaintext/", middleware(http.HandlerFunc(server.handlePlaintext)))
@@ -71,6 +72,10 @@ func (s *HTTPServer) Serve(ctx context.Context) error {
 // Shutdown delegates to the inner http.Server's shutdown function.
 func (s *HTTPServer) Shutdown(ctx context.Context) error {
 	return s.inner.Shutdown(ctx)
+}
+
+func handleFavicon(rw http.ResponseWriter, r *http.Request) {
+	http.ServeFile(rw, r, "static/favicon.ico")
 }
 
 func handleHome(rw http.ResponseWriter, r *http.Request) {
