@@ -4,7 +4,8 @@
   padding: 0;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -50,10 +51,21 @@ body {
 }
 
 @keyframes pulseStatusConnected {
-    0% {color: rgb(0, 75, 0);}
-    15% {color: green;}
-    85% {color: green;}
-    100% {color: rgb(0, 75, 0);}
+  0% {
+    color: rgb(0, 75, 0);
+  }
+
+  15% {
+    color: green;
+  }
+
+  85% {
+    color: green;
+  }
+
+  100% {
+    color: rgb(0, 75, 0);
+  }
 }
 
 #status.connected {
@@ -85,7 +97,7 @@ body {
 }
 
 #status .details {
-    margin-left: 2rem;
+  margin-left: 2rem;
 }
 
 .crumbs {
@@ -93,10 +105,10 @@ body {
 }
 
 .crumbs ol {
-    list-style-type: none;
-    padding-left: 0;
+  list-style-type: none;
+  padding-left: 0;
 }
 
 .crumb {
-    display: inline-block;
+  display: inline-block;
 }
