@@ -2,6 +2,7 @@ package nacre
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -38,6 +39,9 @@ func (peer *Peer) readLoop(ctx context.Context) error {
 		}
 		_, _, err := peer.conn.ReadMessage()
 		if err != nil {
+			if errors.Is(err, websocket.ErrCloseSent) {
+				return nil
+			}
 			if websocket.IsUnexpectedCloseError(
 				err,
 				websocket.CloseNormalClosure,
@@ -68,17 +72,24 @@ func (peer *Peer) writeLoop(ctx context.Context, id string) error {
 		case message, ok := <-data:
 			peer.conn.SetWriteDeadline(time.Now().Add(writeDeadline))
 			if !ok {
-				return peer.conn.WriteMessage(
+				_ = peer.conn.WriteMessage(
 					websocket.CloseMessage,
 					websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Data channel closed"),
 				)
+				return nil
 			}
 			if err := peer.conn.WriteMessage(websocket.BinaryMessage, message); err != nil {
+				if errors.Is(err, websocket.ErrCloseSent) {
+					return nil
+				}
 				return err
 			}
 		case <-ticker.C:
 			peer.conn.SetWriteDeadline(time.Now().Add(writeDeadline))
 			if err := peer.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				if errors.Is(err, websocket.ErrCloseSent) {
+					return nil
+				}
 				return err
 			}
 		}
