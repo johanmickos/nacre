@@ -81,8 +81,8 @@ func (s *TCPServer) handle(ctx context.Context, conn net.Conn) {
 	}
 	defer s.rateLimiter.RemoveClient(ctx, clientIP)
 
-	sid := NewUUID()
-	msg := fmt.Sprintf("Connected to nacre\n%s\n", liveFeedURL(s.baseURL, sid))
+	sid := NewRandString(defaultRandSrc, 6)
+	msg := fmt.Sprintf("Connected to nacre. Serving at: %s\n", liveFeedURL(s.baseURL, sid))
 	n, err := conn.Write([]byte(msg))
 	if err != nil {
 		log.Printf("error: conn.Write: %s\n", err.Error())

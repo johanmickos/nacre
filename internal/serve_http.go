@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/jarlopez/nacre/internal/ws"
 	"golang.org/x/sync/errgroup"
@@ -210,7 +211,7 @@ func withRecovery(next http.Handler) http.Handler {
 
 func withRequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		rid := NewUUID()
+		rid := uuid.New().String()
 		header := rw.Header()
 		header["X-Request-Id"] = []string{rid}
 		// TODO Inject logger w/ request ID into context

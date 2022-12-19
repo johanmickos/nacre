@@ -6,6 +6,7 @@ require golang.org/x/sync v0.1.0
 
 require (
 	github.com/go-redis/redis/v9 v9.0.0-rc.2
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	honnef.co/go/tools v0.3.3
