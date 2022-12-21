@@ -9,13 +9,13 @@ html {
 }
 
 body {
-  margin: 0 1rem;
-  color: rgb(211, 211, 211);
-  background-color: #0f0f0f;
+  color: #eef1f9;
+  font-family: 'Lexend Exa', sans-serif;
+  background-color: black;
 }
 
 ::selection {
-  background: lightblue;
+  background: #5d7bc2;
 }
 
 h1,
@@ -34,7 +34,11 @@ p {
 }
 
 main {
-  max-width: 50rem;
+  max-width: 60rem;
   margin: auto;
-  margin-bottom: 2rem;
+  padding: 0 3rem;
+  min-height: 100vh;
+  background-color: #0E1525;
+  border-left: 2px solid #23355d;
+  border-right: 2px solid #23355d;
 }

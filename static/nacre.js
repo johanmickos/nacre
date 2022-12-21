@@ -3,6 +3,7 @@ const CLOSE_NOT_FOUND = 4002;
 
 (function () {
     const terminal = new Terminal({
+        allowTransparency: true,
         convertEol: true,
         scrollback: 10_000,
         disableStdin: true,
