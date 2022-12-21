@@ -176,11 +176,13 @@ func (s HTTPServer) handleWebsocket(rw http.ResponseWriter, r *http.Request) {
 		_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(ws.CloseNotFound, "Feed not found"))
 		return
 	}
-	if canAdd := s.rateLimiter.TryAddPeer(ctx, feedID); !canAdd {
-		_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(ws.CloseTooManyPeers, "Too many concurrent peers for this feed"))
-		return
+	if feedID != "example" {
+		if canAdd := s.rateLimiter.TryAddPeer(ctx, feedID); !canAdd {
+			_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(ws.CloseTooManyPeers, "Too many concurrent peers for this feed"))
+			return
+		}
+		defer s.rateLimiter.RemovePeer(ctx, feedID)
 	}
-	defer s.rateLimiter.RemovePeer(ctx, feedID)
 
 	peer := &Peer{
 		conn: conn,

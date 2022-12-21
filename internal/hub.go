@@ -3,6 +3,7 @@ package nacre
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/go-redis/redis/v9"
@@ -62,6 +63,9 @@ func NewRedisHub(client *redis.Client, maxRedisStreamLen int, maxStreamPersisten
 }
 
 func (hub *redisHub) FeedExists(ctx context.Context, id string) (bool, error) {
+	if id == "example" {
+		return true, nil
+	}
 	exists, err := hub.client.Exists(ctx, streamName(id)).Result()
 	return exists > 0, err
 }
@@ -89,6 +93,10 @@ func (hub *redisHub) Push(ctx context.Context, id string, data []byte) error {
 }
 
 func (hub *redisHub) Listen(ctx context.Context, id string) (<-chan []byte, error) {
+	if id == "example" {
+		return hub.generateExampleData(ctx)
+	}
+
 	ch := make(chan []byte)
 
 	go func() {
@@ -150,7 +158,39 @@ func (hub *redisHub) Listen(ctx context.Context, id string) (<-chan []byte, erro
 	return ch, nil
 }
 
+func (hub *redisHub) generateExampleData(ctx context.Context) (<-chan []byte, error) {
+	// TODO Ensure rate limiter doesn't care about example data
+	ch := make(chan []byte)
+
+	go func() {
+		defer close(ch)
+		for _, data := range exampleData {
+			jitter := time.Duration(rand.Intn(350)+50) * time.Millisecond
+			select {
+			case <-time.After(jitter):
+				// OK
+			case <-ctx.Done():
+				return
+			}
+			select {
+			case ch <- data:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return ch, nil
+}
+
+func (hub *redisHub) getAllExampleData(ctx context.Context) ([][]byte, error) {
+	return exampleData, nil
+}
+
 func (hub *redisHub) GetAll(ctx context.Context, id string) ([][]byte, error) {
+	if id == "example" {
+		return hub.getAllExampleData(ctx)
+	}
 	stream := streamName(id)
 	args := &redis.XReadArgs{
 		Streams: []string{stream, "0"},
