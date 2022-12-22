@@ -55,12 +55,12 @@ func NewHTTPServer(address string, hub Hub, rateLimiter RateLimiter) *HTTPServer
 	}
 	middleware := func(next http.Handler) http.Handler { return withRecovery(withRequestID(next)) }
 
+	server.mux.Handle("/", middleware(http.HandlerFunc(handleHome)))
 	server.mux.Handle("/favicon.ico", http.HandlerFunc(handleFavicon))
 	server.mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	server.mux.Handle("/feed/", middleware(http.HandlerFunc(server.handleFeed)))
 	server.mux.Handle("/plaintext/", middleware(http.HandlerFunc(server.handlePlaintext)))
 	server.mux.Handle("/websocket", middleware(http.HandlerFunc(server.handleWebsocket)))
-	server.mux.Handle("/", middleware(http.HandlerFunc(handleHome)))
 	return server
 }
 
@@ -80,6 +80,10 @@ func handleFavicon(rw http.ResponseWriter, r *http.Request) {
 }
 
 func handleHome(rw http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		renderError(rw, r, newNotFoundError("Page cannot be found"))
+		return
+	}
 	if err := homeTemplate.Execute(rw, nil); err != nil {
 		renderError(rw, r, err)
 		return

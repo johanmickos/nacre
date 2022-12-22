@@ -10,6 +10,7 @@ html {
 }
 
 body {
+  min-height: 100vh;
   color: rgb(194, 200, 204);
   font-family: 'Lexend Exa', sans-serif;
 }
@@ -78,6 +79,30 @@ main {
   border: 1px solid #23355d;
   border-width: 0 1px;
 }
+
+
+.container {
+  position: relative;
+  height: 100vh;
+}
+
+.centered-element {
+  text-align: center;
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.error-message {
+  padding: 2rem;
+  background-color: #0E1525;
+  border: 2px solid #23355d;
+  border-width: 0 1px;
+  border-radius: 10px;
+}
+
 
 a {
   color: #57ABFF;

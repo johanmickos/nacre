@@ -6,13 +6,13 @@
     <link rel="stylesheet" href="/static/home.css" />
     <title>nacre</title>
   </head>
-  <body>
-    <main>
+  <body class="spectrum-background">
+    <div class="container">
+      <div class="centered-element error-message">
         <h1>{{ .Title }}</h1>
         <p><strong>{{ .Name }}: </strong>{{ .Description }}</p>
-        {{ if ne .Details "" }}
-        <p>{{ .Details }}</p>
-        {{ end }}
-    </main>
+        <p>Click <a href="/">here</a> to go back to the homepage.</p>
+      </div>
+    </div>
   </body>
 </html>
