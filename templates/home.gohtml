@@ -6,10 +6,54 @@
     <link rel="stylesheet" href="/static/home.css" />
     <title>nacre</title>
   </head>
-  <body>
+  <body class="spectrum-background">
     <main>
-        <h1>Nacre</h1>
-        <p>Nacre is an open source implementation of <a href="https://seashells.io">Seashells.io</a> by <a href="https://github.com/anishathalye">@anishathalye</a>.</p>
+      <header>
+        <h1>Nacre: stream terminal output to the web</h1>
+      </header>
+      <div class="example">
+        <pre><span class="prompt">$</span> <span class="command">echo</span> <span class="string">'Hello, world!'</span> | <span class="command">nc</span> nacre.dev <span class="number">1337</span><br/><span class="output">Connected to nacre. Serving at: https://nacre.dev/feed/${id}</span></pre>
+      </div>
+      <p>Nacre lets you monitor and share commandline output in realtime on the web without installing additional tooling.</p>
+      <p>Nacre is an open source implementation of <a href="https://seashells.io">Seashells</a>.
+      <h2>Examples</h2>
+      <p>Visit the <a href="/feed/example">example feed</a> to see how nacre displays your output without submitting your own data.</p>
+
+
+      <div class="example">
+        <div class="caption">Pipe output of command using <code>netcat</code></div>
+        <pre><span class="prompt">$</span> <span class="command">echo</span> <span class="string">'Hello, world!'</span> | <span class="command">nc</span> nacre.dev <span class="number">1337</span><br/><span class="output">Connected to nacre. Serving at: https://nacre.dev/feed/${id}</span></pre>
+      </div>
+
+      <div class="example">
+        <div class="caption">Show output on <code>stdout</code> and pipe it to nacre</div>
+        <pre><span class="prompt">$</span> <span class="command">grep</span> <span class="flag">-n</span> <span class="string">'nacre'</span> ./README.md | <span class="command">tee</span> >(<span class="command">netcat</span> nacre.dev <span class="number">1337</span>)<br/><span class="output">1:# nacre<br/>10:htop | nacre.dev 1337<br/>27:./out/bin/nacre-server<br/>39:See the [deployment README](deployment/README.md) for details on how https://nacre.dev is deployed.<br/>Connected to nacre. Serving at: https://nacre.dev/feed/${id}</span></pre>
+      </div>
+
+      <div class="example">
+        <div class="caption">Leverage the official <a href="https://github.com/anishathalye/seashells">seashells client</a> to pipe output to nacre and <code>stdout</code></div>
+        <pre><span class="prompt">$</span> <span class="command">make check</span> | <span class="command">seashells</span> <span class="flag">--delay</span> <span class="number">5</span> <span class="flag">--ip</span> $(<span class="command">dig</span> <span class="flag">+short<span> nacre.dev)<br/><span class="output">Connected to nacre. Serving at: https://nacre.dev/feed/${id}<br/>golint ./...<br/>staticcheck ./...</span></pre>
+      </div>
+
+      <h2>Usage Notes</h2>
+      <ul>
+        <li>By default, nacre has hard limits on how data is stored and accessed:
+          <ul>
+            <li>Up to 5 simultaneous data connections per IP.</li>
+            <li>Up to 3 simultaneous live feed connections per feed ID.</li>
+            <li>Feed data is automatically deleted after 24 hours.</li>
+            <li>Feed data can take up at most 1024kb. If a feed receives more data after this limit, the earliest feed data entries will be deleted.</li>
+          </ul>
+        </li>
+        <li>To view your data feed as <strong>plaintext</strong>, replace <code>/feed/{id}</code> of the feed URL with <code>/plaintext/${id}</code><br/>
+        (or use the "Plaintext" link in the top bar of the feed).
+        </li>
+        <li>Nacre does not (currently) prioritize data retention or high availability. If you wish to harden the application or modify the default configurations, feel free to fork and/or self-host the application.</li>
+      </ul>
+      <h2>Acknowledgements</h2>
+      <p>Nacre is written by @johanmickos.</p>
+
+      The original <a href="https://seashells.io">Seashells</a> project is created by <a href="https://github.com/anishathalye">@anishathalye</a>.</p>
     </main>
   </body>
 </html>

@@ -5,13 +5,21 @@
 }
 
 html {
+  font-size: 15px;
   line-height: 1.5;
 }
 
 body {
-  color: #eef1f9;
+  color: rgb(194, 200, 204);
   font-family: 'Lexend Exa', sans-serif;
-  background-color: black;
+}
+
+.spectrum-background {
+  background:
+    linear-gradient(144.35deg, transparent 32%, rgba(241, 111, 112, 0.59) 110%),
+    linear-gradient(192.29deg, transparent 32%, rgba(111, 219, 241, .67) 140%);
+  background-blend-mode: screen;
+  background-color: #131c31;
 }
 
 ::selection {
@@ -24,7 +32,8 @@ h3,
 h4,
 h5,
 h6 {
-  margin-bottom: 1rem;
+  color: #eef1f9;
+  padding: 1rem 0;
   font-weight: bold;
 }
 
@@ -33,12 +42,97 @@ p {
   margin-bottom: 1rem;
 }
 
+ul {
+  list-style-position: inside;
+}
+
+ul li {
+  padding-left: 1em;
+  list-style-type: none;
+}
+
+ul li::before {
+  content: "\25CF";
+  color: #23355d;
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+
+ul ul li {
+  margin-bottom: 0.2rem !important;
+}
+
+li:not(:last-child) {
+  margin-bottom: 1rem;
+}
+
 main {
-  max-width: 60rem;
-  margin: auto;
-  padding: 0 3rem;
+  max-width: 50rem;
+  margin: 0 auto;
+  padding: 1rem;
   min-height: 100vh;
   background-color: #0E1525;
-  border-left: 2px solid #23355d;
-  border-right: 2px solid #23355d;
+  border: 1px solid #23355d;
+  border-width: 0 1px;
 }
+
+a {
+  color: #57ABFF;
+  text-decoration: none;
+}
+
+a:hover {
+  color: rgb(0, 83, 166);
+  text-decoration: underline;
+}
+
+code {
+  color: rgb(241, 111, 112);
+}
+
+.example {
+  margin: 1rem;
+}
+
+.example .caption {
+  font-weight: bold;
+  background-color: rgb(38, 50, 77);
+  border-radius: 5px 5px 0 0;
+  border: 1px solid rgb(60, 68, 92);
+  border-bottom: none;
+  color: rgb(255 255, 255);
+  padding: 0.1rem 1rem;
+}
+
+pre {
+  background-color: rgb(28, 35, 51);
+  border-radius: 5px;
+  border: 1px solid rgb(60, 68, 92);
+  color: rgb(255 255, 255);
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  white-space: pre-wrap;
+}
+
+.example .caption+pre {
+  border-radius: 0 0 5px 5px;
+}
+
+pre .output {
+  color: #5F677A;
+}
+
+pre .prompt {
+  font-weight: bold;
+}
+
+pre .string {
+  color: #f1c900;
+}
+
+pre .command {}
+
+pre .number {}
