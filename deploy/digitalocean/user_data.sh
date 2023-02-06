@@ -55,7 +55,7 @@ sudo mkdir /etc/nginx/stream.d
 
 # FIXME: These should be part of continuous deployment
 # Using HTTPS because SSH requires password-protected SSH key
-git clone https://github.com/jarlopez/nacre.git /app/nacre
+git clone https://github.com/johanmickos/nacre.git /app/nacre
 
 /app/nacre/deploy/digitalocean/deploy-nginx.sh
 /app/nacre/deploy/digitalocean/deploy-systemd.sh

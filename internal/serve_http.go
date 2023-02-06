@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/jarlopez/nacre/internal/ws"
+	"github.com/johanmickos/nacre/internal/ws"
 	"golang.org/x/sync/errgroup"
 )
 

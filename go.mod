@@ -1,4 +1,4 @@
-module github.com/jarlopez/nacre
+module github.com/johanmickos/nacre
 
 go 1.18
 

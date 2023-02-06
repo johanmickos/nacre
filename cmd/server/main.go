@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	nacre "github.com/jarlopez/nacre/internal"
+	nacre "github.com/johanmickos/nacre/internal"
 	"golang.org/x/sync/errgroup"
 )
 
