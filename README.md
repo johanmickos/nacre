@@ -1,6 +1,14 @@
 # nacre
 
-Nacre is an open source replica of the seashells.io server.
+Nacre enables you to stream commandline output to the web and view the realtime output in your browser.
+
+It is an open source replica of the [seashells.io](https://seashells.io/) server.
+
+## Examples
+
+```bash
+htop | nacre.dev 1337
+```
 
 ## What's in a name?
 
@@ -20,21 +28,15 @@ make build
 
 # Or leverage docker-compose to run both Nacre and Redis:
 make dockerbuild
-make run
+make dockerrun
 ```
 
+## Configuration
+
+See the [sample .env file](.env.sample) for configurable parameters.
+
 ## Deployment
-
-### `nacre.dev`
-
-The "official" [nacre.dev](https://nacre.dev) application is deployed to DigitalOcean (DO) with nginx, the Dockerized web application, and redis (also Dockerized) all running on a single droplet. This isn't an ideal setup for high availability, but it's enough for demonstrating the project.
-
-The [nacre.dev](https://nacre.dev) domain name is managed by [NameCheap](https://www.namecheap.com), and for simplicity we leverage NameCheap's DNS nameservers. The DO droplet is assigned a [reserved IP](https://docs.digitalocean.com/products/networking/reserved-ips/) address which is used to configure the DNS records within NameCheap.
-
-[Let's Encrypt](https://letsencrypt.org/) and [certbot](https://certbot.eff.org/) are used to secure the web traffic and manage SSL certificates.
-
-Finally, we leverage GitHub Actions to drive continuous deployment to the DO droplet from the base branch in this repository.
-
+See the [deployment README](deployment/README.md) for details on how https://nacre.dev is deployed.
 
 ## Dependencies
 
