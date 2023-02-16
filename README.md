@@ -1,6 +1,6 @@
-# nacre
+# [nacre](https://nacre.dev)
 
-Nacre enables you to stream commandline output to the web and view the realtime output in your browser.
+[Nacre](https://nacre.dev) enables you to stream commandline output to the web and view the realtime output in your browser.
 
 It is an open source replica of the [seashells.io](https://seashells.io/) server.
 
