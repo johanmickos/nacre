@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-if [ -z ${DIGITALOCEAN_TOKEN} ]; then 
+if [ -z ${DIGITALOCEAN_TOKEN} ]; then
     echo "DIGITALOCEAN_TOKEN is unset or empty"
     echo $DIGITALOCEAN_TOKEN
     exit -1
@@ -15,10 +15,10 @@ response=$(curl -X POST \
   -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
   -d '{
     "name":"nacre-web-01",
-    "region":"nyc1",
+    "region":"sfo3",
     "size":"s-1vcpu-512mb-10gb",
-    "image":"ubuntu-22-10-x64",
-    "ssh_keys":["b7:fd:cc:bb:2b:74:e4:65:71:e2:bb:3e:19:3f:f6:d8"],
+    "image":"ubuntu-23-10-x64",
+    "ssh_keys":["c2:b0:59:67:33:19:c8:43:46:7b:e3:e8:78:51:a1:66"],
     "backups":false,
     "ipv6":true,
     "monitoring":true,

@@ -3,7 +3,7 @@
 version: '3.9'
 services:
   nacre:
-    image: "nacre:latest"
+    image: "${NACRE_IMAGE:-nacre:latest}" # Allows CI/CD to set NACRE_IMAGE to private registry
     ports:
       - "8080:8080"
       - "9090:1337"                       # Matches nginx configuration of forwarding 1337->9090

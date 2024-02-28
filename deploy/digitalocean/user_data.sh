@@ -13,6 +13,7 @@ sudo apt-get -y install apt-transport-https ca-certificates curl software-proper
 #### Install service dependencies
 # nginx: reverse proxying to nacre web application
 sudo apt-get -y install nginx
+sudo apt-get install -y libnginx-mod-stream
 
 # certbot: SSL certificate management
 sudo snap install core
@@ -34,8 +35,11 @@ DOCKER_COMPOSE_VERSION="v2.14.1"
 sudo curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)" -o ~/.docker/cli-plugins/docker-compose
 chmod +x ~/.docker/cli-plugins/docker-compose
 
+# DigitalOcean
 # TODO DigitalOcean metrics agent
 sudo curl -sSL https://repos.insights.digitalocean.com/install.sh | sudo bash
+snap install doctl
+sudo snap connect doctl:dot-docker # Grant access to doctl:dot-docker plug to use command
 
 #### Uncomplicated Firewall (UFW) setup
 # For details:

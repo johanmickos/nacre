@@ -9,8 +9,8 @@ StartLimitIntervalSec=60
 [Service]
 User=nacre-admin
 WorkingDirectory=/app/nacre
-ExecStart=docker compose up -f deploy/docker-compose.yaml
-ExecStop=docker compose down
+ExecStart=docker compose -f docker-compose.yml up
+ExecStop=docker compose -f docker-compose.yml stop
 TimeoutStartSec=0
 Restart=on-failure
 StartLimitBurst=3
